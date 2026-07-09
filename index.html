@@ -658,7 +658,7 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
       <div>
         <div class="slider-row">
           <label>Your birthday</label>
-          <input type="date" id="ret-birthdate-self" value="1971-06-15"
+          <input type="date" id="ret-birthdate-self" value="1969-01-01"
             style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:13px;width:160px"
             oninput="syncAgeFromBirth();renderRetire()">
           <span id="ret-age-display" style="font-size:12px;color:var(--muted);min-width:60px">age —</span>
@@ -720,13 +720,13 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
       <div id="ret-ssi-fields" style="display:none;margin-top:10px">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
           <div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Jeff</div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">You</div>
             <div class="slider-row" title="Your estimated benefit at Full Retirement Age (from ssa.gov/myaccount)">
               <label>FRA benefit / mo <span class="tip">?<span class="tip-text">Your Full Retirement Age (FRA) benefit from ssa.gov/myaccount — the monthly amount if you claim exactly at FRA. Claiming early reduces it; delaying past FRA increases it up to age 70.</span></span></label>
               <input type="range" id="ret-ssi-self" min="0" max="5000" step="50" value="2500" oninput="updateSsiCalc();renderRetire()">
               <input type="number" id="ret-ssi-self-val" min="0" max="99999" step="50" value="2500" oninput="el('ret-ssi-self').value=this.value;updateSsiCalc();renderRetire()">
             </div>
-            <div class="slider-row" title="Age at which Jeff claims Social Security (62–70, half-year steps)">
+            <div class="slider-row" title="Age at which you claim Social Security (62–70, half-year steps)">
               <label>Claim age</label>
               <select id="ret-ssi-self-claimage" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:13px;width:90px" onchange="updateSsiCalc();renderRetire()"></select>
               <span id="ret-ssi-self-calc" style="font-size:11px;color:var(--green);min-width:90px;text-align:right"></span>
@@ -736,7 +736,7 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
             <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Spouse</div>
             <div class="slider-row" title="Spouse birthday — used to calculate FRA and map claim age to projection year">
               <label>Spouse birthday</label>
-              <input type="date" id="ret-birthdate-spouse" value="1973-01-01"
+              <input type="date" id="ret-birthdate-spouse" value="1969-01-01"
                 style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:13px;width:150px"
                 oninput="updateSsiCalc();renderRetire()">
               <span id="ret-ssi-spouse-age-display" style="font-size:12px;color:var(--muted);min-width:50px"></span>
@@ -769,8 +769,8 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
       <div id="ret-extra-fields" style="display:none;margin-top:10px">
         <div class="slider-row" title="Extra annual investment on top of your monthly contribution (e.g. bonus, RSU, side income)">
           <label>Extra / year <span class="tip">?<span class="tip-text">Additional annual lump-sum investments (bonus, side income, etc.) added on top of your monthly contribution.</span></span></label>
-          <input type="range" id="ret-extra-amt" min="0" max="100000" step="1000" value="12000" oninput="renderRetire()">
-          <input type="number" id="ret-extra-amt-val" min="0" max="9999999" step="1000" value="12000" oninput="el('ret-extra-amt').value=this.value;renderRetire()">
+          <input type="range" id="ret-extra-amt" min="0" max="100000" step="1000" value="0" oninput="renderRetire()">
+          <input type="number" id="ret-extra-amt-val" min="0" max="9999999" step="1000" value="0" oninput="el('ret-extra-amt').value=this.value;renderRetire()">
         </div>
         <div class="slider-row" title="Year you expect to stop making these extra investments">
           <label>Stop investing year <span class="tip">?<span class="tip-text">The calendar year you plan to stop extra annual investments — often the year you retire or that income source ends.</span></span></label>
@@ -1151,7 +1151,7 @@ function syncAgeFromBirth() {
 function updateSsiCalc() {
   // Jeff
   const selfBirth = el('ret-birthdate-self')?.value;
-  const selfBY    = selfBirth ? new Date(selfBirth).getFullYear() : 1971;
+  const selfBY    = selfBirth ? new Date(selfBirth).getFullYear() : 1969;
   const selfFra   = ssFullRetirementAge(selfBY);
   const selfClaim = parseFloat(el('ret-ssi-self-claimage')?.value) || selfFra;
   const selfFraMo = +el('ret-ssi-self').value || 0;
@@ -1161,7 +1161,7 @@ function updateSsiCalc() {
 
   // Spouse
   const spBirth = el('ret-birthdate-spouse')?.value;
-  const spBY    = spBirth ? new Date(spBirth).getFullYear() : 1973;
+  const spBY    = spBirth ? new Date(spBirth).getFullYear() : 1969;
   const spFra   = ssFullRetirementAge(spBY);
   const spAge   = ageFromBirthdate(spBirth);
   if (spAge != null) {
@@ -1185,7 +1185,7 @@ function getSsiInputs(curAge) {
 
   // Jeff
   const selfBirth  = el('ret-birthdate-self')?.value;
-  const selfBY     = selfBirth ? new Date(selfBirth).getFullYear() : 1971;
+  const selfBY     = selfBirth ? new Date(selfBirth).getFullYear() : 1969;
   const selfFra    = ssFullRetirementAge(selfBY);
   const selfClaim  = parseFloat(el('ret-ssi-self-claimage')?.value) || selfFra;
   const selfFraMo  = +el('ret-ssi-self').value || 0;
@@ -1196,7 +1196,7 @@ function getSsiInputs(curAge) {
 
   // Spouse
   const spBirth  = el('ret-birthdate-spouse')?.value;
-  const spBY     = spBirth ? new Date(spBirth).getFullYear() : 1973;
+  const spBY     = spBirth ? new Date(spBirth).getFullYear() : 1969;
   const spFra    = ssFullRetirementAge(spBY);
   const spAge    = ageFromBirthdate(spBirth) || +el('ret-ssi-spouse-now').value || 53;
   const spClaim  = parseFloat(el('ret-ssi-spouse-claimage')?.value) || spFra;
@@ -1359,7 +1359,7 @@ function renderRothPlanner() {
   const bracket    = +(el('roth-bracket')?.value   || 12);
   const rothRate   = +(el('ret-rate')?.value        || 7) / 100;
   const expenses   = +(el('ret-expenses')?.value    || 80000);
-  const birthStr   = el('ret-birthdate-self')?.value || '1971-12-02';
+  const birthStr   = el('ret-birthdate-self')?.value || '1969-01-01';
   const birthYear  = +birthStr.split('-')[0];
   const birthMonth = +birthStr.split('-')[1] - 1; // 0-indexed
 
