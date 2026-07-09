@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retirement Calculator — Help & Guide</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3e;
+    --text: #d4d6e0;
+    --muted: #7b7f96;
+    --blue: #4f8ef7;
+    --blue-dim: rgba(79,142,247,.12);
+    --green: #3ecf8e;
+    --yellow: #f5c842;
+    --red: #f26b6b;
+    --accent: #7c5cfc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Layout ── */
+  .page-wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 32px 20px 80px;
+  }
+  .top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    gap: 12px;
+  }
+  .top-bar h1 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .back-btn {
+    background: var(--blue-dim);
+    border: 1px solid var(--blue);
+    color: var(--blue);
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .back-btn:hover { background: rgba(79,142,247,.22); text-decoration: none; }
+
+  /* ── Table of contents ── */
+  .toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 36px;
+  }
+  .toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 12px; }
+  .toc ol { padding-left: 20px; }
+  .toc li { margin: 4px 0; font-size: 14px; }
+
+  /* ── Sections ── */
+  .section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+  .section-hdr {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .section-hdr .icon { font-size: 20px; }
+  .section-hdr h2 { font-size: 17px; font-weight: 700; color: #fff; }
+  .section-hdr .anchor { font-size: 13px; color: var(--muted); }
+
+  p { margin-bottom: 12px; }
+  p:last-child { margin-bottom: 0; }
+
+  h3 { font-size: 14px; font-weight: 700; color: #fff; margin: 18px 0 6px; }
+  h3:first-child { margin-top: 0; }
+
+  ul, ol { padding-left: 20px; margin-bottom: 12px; }
+  li { margin: 4px 0; }
+
+  /* ── Field table ── */
+  .field-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  .field-table th {
+    text-align: left;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--muted);
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .field-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(42,45,62,.6);
+    vertical-align: top;
+  }
+  .field-table tr:last-child td { border-bottom: none; }
+  .field-table td:first-child { font-weight: 600; color: #c8cad8; white-space: nowrap; }
+
+  /* ── Callout boxes ── */
+  .callout {
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 14px 0;
+    font-size: 14px;
+    display: flex;
+    gap: 10px;
+  }
+  .callout .ci { font-size: 17px; flex-shrink: 0; margin-top: 1px; }
+  .callout.tip  { background: rgba(79,142,247,.1);  border-left: 3px solid var(--blue); }
+  .callout.warn { background: rgba(245,200,66,.1);  border-left: 3px solid var(--yellow); }
+  .callout.info { background: rgba(62,207,142,.08); border-left: 3px solid var(--green); }
+
+  /* ── Scenario pills ── */
+  .pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    margin: 2px 3px;
+  }
+  .pill-bear { background: rgba(242,107,107,.15); color: #f26b6b; border: 1px solid rgba(242,107,107,.35); }
+  .pill-base { background: rgba(79,142,247,.15);  color: var(--blue); border: 1px solid rgba(79,142,247,.35); }
+  .pill-bull { background: rgba(62,207,142,.12);  color: var(--green); border: 1px solid rgba(62,207,142,.3); }
+
+  /* ── Divider ── */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+
+  /* ── Disclaimer ── */
+  .disclaimer {
+    background: rgba(245,200,66,.06);
+    border: 1px solid rgba(245,200,66,.25);
+    border-radius: 10px;
+    padding: 18px 22px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 28px;
+    line-height: 1.6;
+  }
+  .disclaimer strong { color: var(--yellow); }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <h1>📘 Retirement Calculator — Help &amp; Guide</h1>
+    <a class="back-btn" href="index.html">← Back to Calculator</a>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <h2>Contents</h2>
+    <ol>
+      <li><a href="#overview">What this calculator does</a></li>
+      <li><a href="#getting-started">Getting started</a></li>
+      <li><a href="#balances">Current portfolio balances</a></li>
+      <li><a href="#assumptions">Retirement assumptions</a></li>
+      <li><a href="#social-security">Social Security</a></li>
+      <li><a href="#extra-contrib">Additional annual investments</a></li>
+      <li><a href="#roth">Roth Conversion Planner</a></li>
+      <li><a href="#drawdown">Drawdown Projection</a></li>
+      <li><a href="#results">Reading the results</a></li>
+      <li><a href="#privacy">Privacy &amp; data storage</a></li>
+      <li><a href="#disclaimer">Disclaimer</a></li>
+    </ol>
+  </div>
+
+  <!-- 1. Overview -->
+  <div class="section" id="overview">
+    <div class="section-hdr"><span class="icon">🧭</span><h2>What this calculator does</h2></div>
+    <p>This is a personal retirement projection tool. It models how your savings grow from today through retirement and then estimates how long they'll last during the drawdown phase, year by year.</p>
+    <p>It accounts for:</p>
+    <ul>
+      <li>Multiple account types (IRA, 401k, Roth IRA, HSA, taxable brokerage)</li>
+      <li>Social Security income for you and a spouse</li>
+      <li>Required Minimum Distributions (RMDs) starting at the correct SECURE 2.0 age</li>
+      <li>Medicare/IRMAA cost estimates drawn from HSA funds</li>
+      <li>Roth conversion windows (moving pre-tax money to Roth during lower-income years)</li>
+      <li>Bear / Base / Bull drawdown scenarios at fixed return rates</li>
+      <li>Inflation adjustment on your expenses</li>
+    </ul>
+    <p>It does <strong>not</strong> replace a financial advisor. See the <a href="#disclaimer">disclaimer</a> at the bottom.</p>
+  </div>
+
+  <!-- 2. Getting started -->
+  <div class="section" id="getting-started">
+    <div class="section-hdr"><span class="icon">🚀</span><h2>Getting started</h2></div>
+    <p>Fill in the fields from top to bottom. The projection updates automatically as you type — no submit button needed.</p>
+    <ol>
+      <li>Enter your <strong>account balances</strong> at the top.</li>
+      <li>Set your <strong>birthdate</strong> — the retirement date and Roth window auto-populate.</li>
+      <li>Adjust <strong>annual expenses</strong> and <strong>expected return</strong> to match your plan.</li>
+      <li>Add <strong>Social Security</strong> estimates if applicable.</li>
+      <li>Review the <strong>Retirement Projection</strong> chart and <strong>Drawdown Projection</strong> table.</li>
+    </ol>
+    <div class="callout tip">
+      <span class="ci">💾</span>
+      <div>All values are automatically saved in your browser. Refreshing or closing the tab won't lose your data. Use the <strong>Reset</strong> button to clear everything and start over.</div>
+    </div>
+    <div class="callout info">
+      <span class="ci">🔒</span>
+      <div>The <strong>Private</strong> button blurs all dollar amounts on screen — useful if you're working in a public place. Click again to reveal.</div>
+    </div>
+  </div>
+
+  <!-- 3. Balances -->
+  <div class="section" id="balances">
+    <div class="section-hdr"><span class="icon">💼</span><h2>Current portfolio balances</h2></div>
+    <p>Enter your <em>current</em> account balances — what they're worth today, not your contribution history.</p>
+    <table class="field-table">
+      <tr><th>Field</th><th>What to enter</th></tr>
+      <tr><td>Traditional IRA</td><td>Balance in any rollover IRA or traditional IRA account</td></tr>
+      <tr><td>401(k) / 403(b)</td><td>Your current employer plan balance (pre-tax)</td></tr>
+      <tr><td>Roth IRA</td><td>Roth IRA balance — contributions + growth, both tax-free at withdrawal</td></tr>
+      <tr><td>HSA</td><td>Health Savings Account balance. Calculator uses this for Medicare costs first before drawing from other accounts</td></tr>
+      <tr><td>Taxable Brokerage</td><td>After-tax investment accounts (not retirement-specific)</td></tr>
+    </table>
+    <p>The <strong>Total Portfolio</strong> shown below the fields is the sum of all five — this is the starting balance for your projections.</p>
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div>Leave any account at <strong>$0</strong> if you don't have that account type. The calculator handles missing buckets gracefully.</div>
+    </div>
+  </div>
+
+  <!-- 4. Assumptions -->
+  <div class="section" id="assumptions">
+    <div class="section-hdr"><span class="icon">⚙️</span><h2>Retirement assumptions</h2></div>
+    <table class="field-table">
+      <tr><th>Field</th><th>What it means</th></tr>
+      <tr><td>Your birthdate</td><td>Used to calculate your current age, retirement age, RMD start year, and the Roth conversion window. The retirement date and Roth window auto-fill when you enter this.</td></tr>
+      <tr><td>Spouse birthdate</td><td>Used to calculate the spouse's SS claim year. Leave blank if no spouse or if spouse has no SS benefit.</td></tr>
+      <tr><td>Retirement date</td><td>The year you plan to retire. Auto-set to age 67 (full SS age) when you enter your birthdate. Adjust freely.</td></tr>
+      <tr><td>Annual expenses</td><td>Your estimated annual spending in retirement, in today's dollars. The calculator inflates this by 2.5%/year going forward.</td></tr>
+      <tr><td>Monthly contribution</td><td>How much you're adding to your portfolio each month between now and retirement. Set to $0 if you're already retired.</td></tr>
+      <tr><td>Expected return</td><td>Annual growth rate assumed for your portfolio during the <em>accumulation</em> phase (now → retirement). A common estimate is 6–8% for a diversified portfolio. Use the Bear / Normal / Bull buttons as a shortcut.</td></tr>
+      <tr><td>Volatility</td><td>Standard deviation of annual returns. Used in Monte Carlo scenarios if enabled. Typical stock/bond mixes range from 8–15%.</td></tr>
+    </table>
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div><strong>Inflation is baked in at 2.5%/year.</strong> Your expenses grow automatically — you don't need to manually inflate them. Enter what you'd spend in today's dollars.</div>
+    </div>
+  </div>
+
+  <!-- 5. Social Security -->
+  <div class="section" id="social-security">
+    <div class="section-hdr"><span class="icon">🏛️</span><h2>Social Security</h2></div>
+    <p>Expand <em>"Include Social Security"</em> to add SS income. This reduces the amount you need to draw from savings each year.</p>
+    <table class="field-table">
+      <tr><th>Field</th><th>Notes</th></tr>
+      <tr><td>Your monthly benefit</td><td>Find your estimated benefit at <a href="https://www.ssa.gov/myaccount/" target="_blank">ssa.gov/myaccount</a>. Enter the amount at your chosen claim age.</td></tr>
+      <tr><td>Your claim age</td><td>You can claim as early as 62 (reduced benefit) or delay to 70 (maximum benefit). Full retirement age is 67 for those born after 1960.</td></tr>
+      <tr><td>Spouse monthly benefit</td><td>Same — enter the amount your spouse will receive at their claim age. Leave at $0 if not applicable.</td></tr>
+      <tr><td>Spouse claim age</td><td>Can differ from yours. Spouses can also claim a spousal benefit (up to 50% of your benefit) if that's higher than their own.</td></tr>
+    </table>
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div>Delaying SS from 62 to 70 increases your monthly benefit by roughly <strong>77%</strong>. If you have other assets to draw from, delaying often results in more lifetime income — especially if you expect a long retirement.</div>
+    </div>
+    <p>The Social Security estimator panel below the inputs shows a quick breakeven analysis between claim ages.</p>
+  </div>
+
+  <!-- 6. Additional investments -->
+  <div class="section" id="extra-contrib">
+    <div class="section-hdr"><span class="icon">➕</span><h2>Additional annual investments</h2></div>
+    <p>Expand <em>"Include additional annual investments"</em> to model a lump-sum contribution made every year — for example, a bonus, inheritance, or side income you plan to invest.</p>
+    <table class="field-table">
+      <tr><th>Field</th><th>Notes</th></tr>
+      <tr><td>Annual amount</td><td>How much extra you invest each year, on top of your monthly contribution.</td></tr>
+      <tr><td>Stop year</td><td>The last year you expect to make this extra contribution. After this year, only the monthly contribution applies.</td></tr>
+    </table>
+    <p>Set the amount to <strong>$0</strong> (or leave the section collapsed) if this doesn't apply to you.</p>
+  </div>
+
+  <!-- 7. Roth Conversion -->
+  <div class="section" id="roth">
+    <div class="section-hdr"><span class="icon">🔄</span><h2>Roth Conversion Planner</h2></div>
+    <p>A Roth conversion moves money from a pre-tax account (Traditional IRA or 401k) to a Roth IRA. You pay income tax now, but all future growth is tax-free and no RMDs are required on Roth accounts.</p>
+    <p>The optimal window is usually between retirement and age 73–75 (when RMDs kick in), when your income is lower and you can fill lower tax brackets cheaply.</p>
+    <table class="field-table">
+      <tr><th>Field</th><th>Notes</th></tr>
+      <tr><td>Convert from year</td><td>Auto-set to your retirement year. This is typically the first year your income drops significantly.</td></tr>
+      <tr><td>Convert through year</td><td>Auto-set to the year before your RMD start age (73 or 75 per SECURE 2.0 based on your birth year). After RMDs start, those forced withdrawals complicate conversions.</td></tr>
+      <tr><td>Other income in window</td><td>Any non-SS, non-portfolio income during this period — part-time work, rental income, pension, etc. This affects what tax bracket you're in.</td></tr>
+      <tr><td>Target bracket</td><td>The top federal tax bracket you're willing to fill with converted income. Common choices are 12% or 22%. The planner estimates how much you can convert each year without exceeding this bracket.</td></tr>
+    </table>
+    <div class="callout info">
+      <span class="ci">📊</span>
+      <div>The Roth planner table shows a year-by-year breakdown of estimated pre-tax balance, suggested conversion amount, and remaining conversion headroom in your chosen bracket. These are estimates — consult a tax advisor for actual conversion amounts.</div>
+    </div>
+    <div class="callout warn">
+      <span class="ci">⚠️</span>
+      <div>Converting too much in one year can push you into a higher tax bracket or trigger IRMAA Medicare surcharges (if your MAGI exceeds ~$106k/single or ~$212k/married). Coordinate with a CPA before executing large conversions.</div>
+    </div>
+  </div>
+
+  <!-- 8. Drawdown -->
+  <div class="section" id="drawdown">
+    <div class="section-hdr"><span class="icon">📉</span><h2>Drawdown Projection</h2></div>
+    <p>The drawdown table shows year-by-year account balances from retirement until age 95, modeled under three fixed-rate scenarios:</p>
+    <div style="margin: 12px 0;">
+      <span class="pill pill-bear">🐻 Bear — 4%</span>
+      <span class="pill pill-base">📊 Base — 7%</span>
+      <span class="pill pill-bull">🐂 Bull — 10%</span>
+    </div>
+    <p>These are <strong>fixed absolute return rates during retirement</strong> — independent of your accumulation-phase Expected Return. You can also set a <strong>Custom %</strong> using the slider.</p>
+    <h3>RMDs (Required Minimum Distributions)</h3>
+    <p>The IRS requires you to withdraw a minimum amount from pre-tax accounts (IRA + 401k) each year starting at a set age:</p>
+    <ul>
+      <li>Born 1960 or later → RMDs start at <strong>age 75</strong></li>
+      <li>Born 1951–1959 → RMDs start at <strong>age 73</strong></li>
+      <li>Born 1950 or earlier → RMDs start at <strong>age 72</strong></li>
+    </ul>
+    <p>RMDs are calculated using the IRS Uniform Lifetime Table. Roth IRA and HSA accounts are <strong>exempt</strong> from RMDs during your lifetime.</p>
+    <h3>Draw order</h3>
+    <p>The calculator depletes accounts in this order to maximize tax efficiency:</p>
+    <ol>
+      <li>Traditional IRA</li>
+      <li>401(k) / 403(b)</li>
+      <li>Roth IRA (preserved longest — grows tax-free)</li>
+    </ol>
+    <p>HSA funds are reserved for Medicare/IRMAA costs and drawn first for that purpose.</p>
+    <h3>Medicare &amp; IRMAA</h3>
+    <p>The calculator estimates Medicare Part B premiums starting at age 65, growing at 5%/year. If your income (MAGI) exceeds certain thresholds, IRMAA surcharges apply — the table includes a rough IRMAA estimate based on your pre-tax draws plus 85% of SS income.</p>
+    <div class="callout tip">
+      <span class="ci">💡</span>
+      <div>A year showing <strong>$0 balance</strong> means your savings are exhausted. If this happens before age 90+, you may want to adjust your plan — higher contributions, later retirement, reduced expenses, or delayed SS.</div>
+    </div>
+  </div>
+
+  <!-- 9. Reading results -->
+  <div class="section" id="results">
+    <div class="section-hdr"><span class="icon">📈</span><h2>Reading the results</h2></div>
+    <h3>Retirement Projection chart</h3>
+    <p>The main chart shows your projected portfolio value from today through retirement, under Bear / Base / Bull expected return assumptions. The shaded area between Bear and Bull represents the range of outcomes.</p>
+    <ul>
+      <li>The <strong>green/blue line</strong> is the Base scenario — your most likely path.</li>
+      <li>The <strong>red line</strong> (Bear) shows a conservative outcome.</li>
+      <li>The <strong>top line</strong> (Bull) shows an optimistic outcome.</li>
+    </ul>
+    <h3>Projected balance at retirement</h3>
+    <p>The three numbers below the chart show your estimated portfolio value on your retirement date under each scenario. This becomes the starting balance for the drawdown table.</p>
+    <h3>Drawdown table columns</h3>
+    <table class="field-table">
+      <tr><th>Column</th><th>What it shows</th></tr>
+      <tr><td>Year / Age</td><td>Calendar year and your age at that point</td></tr>
+      <tr><td>IRA / 401k / Roth / HSA</td><td>Balance in each account at year-end</td></tr>
+      <tr><td>SS Income</td><td>Total SS (yours + spouse) received that year</td></tr>
+      <tr><td>RMD</td><td>Required Minimum Distribution from pre-tax accounts</td></tr>
+      <tr><td>Expenses</td><td>Inflation-adjusted spending for that year</td></tr>
+      <tr><td>Net draw</td><td>Expenses minus SS income — what comes from your portfolio</td></tr>
+      <tr><td>Total balance</td><td>Sum of all accounts at year-end</td></tr>
+    </table>
+  </div>
+
+  <!-- 10. Privacy -->
+  <div class="section" id="privacy">
+    <div class="section-hdr"><span class="icon">🔒</span><h2>Privacy &amp; data storage</h2></div>
+    <p>All data is stored <strong>locally in your browser</strong> using <code>localStorage</code>. Nothing is sent to any server. Your financial information never leaves your device.</p>
+    <ul>
+      <li>Data persists across browser sessions on the same device and browser.</li>
+      <li>Clearing your browser's site data or using a private/incognito window will not retain values.</li>
+      <li>The <strong>Reset</strong> button clears all saved data and resets all fields to defaults.</li>
+    </ul>
+    <div class="callout info">
+      <span class="ci">🖥️</span>
+      <div>If you use this on multiple devices (laptop at home, phone at work), each device stores its own values separately — they don't sync.</div>
+    </div>
+  </div>
+
+  <!-- 11. Disclaimer -->
+  <div class="disclaimer" id="disclaimer">
+    <strong>⚠️ Disclaimer</strong><br><br>
+    This calculator is provided for <strong>educational and illustrative purposes only</strong>. It is not financial, tax, or investment advice. The projections shown are estimates based on the inputs you provide and simplified mathematical models — they are not guarantees of future performance.<br><br>
+    Actual returns, tax laws, Social Security rules, Medicare costs, and inflation rates will differ from the assumptions used here. Tax laws (including RMD ages, brackets, and Roth rules) are subject to change by Congress. This tool does not account for individual tax situations, state taxes, estate planning, healthcare costs beyond Medicare, or other personal financial factors.<br><br>
+    <strong>Consult a licensed financial advisor, CPA, or retirement planner</strong> before making major financial decisions. Social Security estimates should be verified at <a href="https://www.ssa.gov/myaccount/" target="_blank">ssa.gov</a>.
+  </div>
+
+</div>
+</body>
+</html>
