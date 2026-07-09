@@ -2079,13 +2079,19 @@ function _updateBalTotal() {
 }
 
 
+
+function rmdStartAge(birthYear) {
+  if (birthYear >= 1960) return 75;
+  if (birthYear >= 1951) return 73;
+  return 72;
+}
 function autoRetireYear() {
   const bd = el('ret-birthdate-self')?.value;
   if (!bd) return;
   const yr = parseInt(bd.slice(0, 4));
   if (!yr) return;
   const retYr = yr + 67;
-  const rmdYr = yr + 73;
+  const rmdYr = yr + rmdStartAge(yr);
   const rdy = el('ret-retire-date');
   if (rdy) rdy.value = retYr;
   // Roth window: retirement year → RMD start year
@@ -2129,7 +2135,7 @@ function resetAll() {
 
   // Reset retirement date to birthYear + 67
   const retYr = 1969 + 67;
-  const rmdYr = 1969 + 73;
+  const rmdYr = 1969 + rmdStartAge(1969);
   const rdy = el('ret-retire-date'), rdm = el('ret-retire-month'), rdd = el('ret-retire-day');
   if(rdy) rdy.value = retYr;
   if(el('roth-from-year')) el('roth-from-year').value = retYr;
@@ -2160,7 +2166,7 @@ function resetAll() {
     const bd = el('ret-birthdate-self')?.value;
     if (bd) {
       const retYr = parseInt(bd.slice(0, 4)) + 67;
-      const rmdYr = parseInt(bd.slice(0, 4)) + 73;
+      const rmdYr = parseInt(bd.slice(0, 4)) + rmdStartAge(parseInt(bd.slice(0, 4)));
       if (el('ret-retire-date')) el('ret-retire-date').value = retYr;
       if (el('roth-from-year')) el('roth-from-year').value = retYr;
       if (el('roth-to-year'))   el('roth-to-year').value   = rmdYr;
