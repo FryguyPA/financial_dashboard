@@ -1647,9 +1647,9 @@ function renderRetire() {
   saveRetireInputs();
 }
 
-// Drawdown scenario: 'bear' | 'base' | 'bull' — offset applied to configured return.
+// Drawdown scenario: 'bear' | 'base' | 'bull' — fixed absolute return rates.
 let _ddScenario = 'base';
-const DD_SCENARIO_OFFSET = {bear: -3, base: 0, bull: 3};
+const DD_SCENARIO_RATE = {bear: 4, base: 7, bull: 10};
 
 function setDdCustomRate(v) {
   // Clear scenario buttons, use explicit rate
@@ -1665,9 +1665,8 @@ function setDdScenario(s) {
     const b = el('dd-btn-' + k);
     if (b) b.classList.toggle('dd-active', k === s);
   });
-  // Sync custom slider to match scenario rate (preview value)
-  const rate = +(el('ret-rate-val')?.value ?? el('ret-rate').value) || 7;
-  const preview = Math.max(0.5, rate + (DD_SCENARIO_OFFSET[s] ?? 0));
+  // Sync custom slider to show scenario rate
+  const preview = DD_SCENARIO_RATE[s] ?? 7;
   const cs=el('dd-custom-rate'), cn=el('dd-custom-rate-val');
   if(cs) cs.value=preview; if(cn) cn.value=preview;
   renderRetire();
@@ -1686,17 +1685,17 @@ function renderDrawdown(startBal, retireYear, curAge, expenses, ssi, rate) {
 
   const effectiveRate = _ddScenario === 'custom'
     ? Math.max(0.5, Math.min(20, +(el('dd-custom-rate-val')?.value || el('dd-custom-rate')?.value || rate)))
-    : Math.max(0.5, Math.min(20, rate + (DD_SCENARIO_OFFSET[_ddScenario] ?? 0)));
+    : Math.max(0.5, Math.min(20, DD_SCENARIO_RATE[_ddScenario] ?? rate));
 
   ['bear','base','bull'].forEach(s => {
     const lbl = el('dd-rate-' + s);
-    const r = Math.max(0.5, Math.min(20, rate + DD_SCENARIO_OFFSET[s]));
+    const r = DD_SCENARIO_RATE[s] ?? rate;
     if (lbl) lbl.textContent = `(${r.toFixed(1)}%)`;
   });
   const scenDescriptions = {
-    bear: `Conservative: ${effectiveRate.toFixed(1)}% return (−3% from ${rate}%)`,
-    base: `Base: ${effectiveRate.toFixed(1)}% return (your configured rate)`,
-    bull: `Optimistic: ${effectiveRate.toFixed(1)}% return (+3% from ${rate}%)`,
+    bear: `Conservative: ${effectiveRate.toFixed(1)}% return`,
+    base: `Base: ${effectiveRate.toFixed(1)}% return`,
+    bull: `Optimistic: ${effectiveRate.toFixed(1)}% return`,
     custom: `Custom: ${effectiveRate.toFixed(1)}% return`,
   };
   const scenLbl = el('dd-scenario-label');
