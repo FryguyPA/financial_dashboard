@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Retirement Calculator</title>
+<title>Retirement &amp; Social Security Planner</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 :root{
@@ -587,13 +587,19 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
 .tip .tip-text::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1c2128}
 .disclaimer{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:8px 14px;font-size:11px;color:#f85149;font-weight:600;letter-spacing:.03em;margin-top:8px;display:inline-block}
 .rate-btn{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s,background .15s;white-space:nowrap}.rate-btn:hover{border-color:var(--blue);color:var(--text)}.rate-btn.rate-active{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* ── Page tab navigation ── */
+.page-tab-nav{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border)}
+.ptab-btn{background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);font-size:14px;font-weight:600;padding:10px 20px;cursor:pointer;margin-bottom:-1px;transition:all .15s;white-space:nowrap}
+.ptab-btn:hover{color:var(--text)}
+.ptab-btn.ptab-active{color:var(--blue);border-bottom-color:var(--blue)}
 </style>
 </head>
 <body>
 <div class="page-header">
   <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
     <div>
-      <h1>Retirement Calculator</h1>
+      <h1>Retirement &amp; SS Planner</h1>
       <p>Enter your balances and assumptions &mdash; all math runs in your browser, nothing sent to any server.</p>
       <div class="disclaimer">&#9888; Not financial advice &mdash; for educational and planning purposes only. Consult a licensed financial advisor before making investment decisions.</div>
     </div>
@@ -601,6 +607,11 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
   </div>
 </div>
 <main>
+  <div class="page-tab-nav">
+    <button id="ptab-btn-retire" class="ptab-btn ptab-active" onclick="switchPageTab('retire')">📊 Retirement Calculator</button>
+    <button id="ptab-btn-ss" class="ptab-btn" onclick="switchPageTab('ss')">🏛️ Social Security Optimizer</button>
+  </div>
+  <div id="ptab-retire">
 
   <div id="portfolio-card" class="proj-card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -1003,6 +1014,137 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
 </div>
 
 </div>
+
+  </div><!-- /ptab-retire -->
+
+  <!-- ── Social Security Optimizer Tab ── -->
+  <div id="ptab-ss" style="display:none">
+
+    <!-- Inputs -->
+    <div class="proj-card" style="margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h3 style="font-size:15px;font-weight:700;margin:0">Your Information</h3>
+        <button onclick="renderSSOptimizer()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer">&#9654; Calculate</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Your Birth Year</label>
+          <input type="number" id="ss-birth-year" value="1969" min="1930" max="2005" step="1"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:14px"
+            oninput="renderSSOptimizer()">
+          <div style="font-size:11px;color:var(--muted);margin-top:5px">Full Retirement Age: <strong id="ss-fra-display" style="color:var(--text)">—</strong></div>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">
+            Your FRA Monthly Benefit ($)
+            <span title="From your ssa.gov statement — the amount shown at your full retirement age" style="cursor:help;color:var(--blue);margin-left:3px">?</span>
+          </label>
+          <input type="number" id="ss-fra-benefit" value="2500" min="0" max="15000" step="50"
+            style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:14px"
+            oninput="renderSSOptimizer()">
+          <div style="font-size:11px;color:var(--muted);margin-top:5px">Find yours at <a href="https://www.ssa.gov/myaccount/" target="_blank" style="color:var(--blue)">ssa.gov/myaccount</a></div>
+        </div>
+        <div>
+          <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Life Expectancy</label>
+          <div style="display:flex;align-items:center;gap:8px">
+            <input type="range" id="ss-life-exp" min="70" max="100" value="85" step="1"
+              style="flex:1;accent-color:var(--blue)"
+              oninput="document.getElementById('ss-life-exp-val').value=this.value;renderSSOptimizer()">
+            <input type="number" id="ss-life-exp-val" value="85" min="70" max="100" step="1"
+              style="width:60px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:4px 6px;font-size:13px;text-align:center"
+              oninput="document.getElementById('ss-life-exp').value=this.value;renderSSOptimizer()">
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:5px">Average for today's 65-year-olds: ~85</div>
+        </div>
+      </div>
+      <div id="ss-recommendation" style="margin-top:14px;display:none"></div>
+    </div>
+
+    <!-- Cumulative chart -->
+    <div class="proj-card" style="margin-bottom:16px">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px">Cumulative Lifetime Benefits by Claim Age</h3>
+      <div style="position:relative;height:300px">
+        <canvas id="ss-chart"></canvas>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center">Lines cross at the breakeven age — claiming later wins if you live past that point.</div>
+    </div>
+
+    <!-- Tables row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
+      <div class="proj-card">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:10px">Monthly Benefit by Claim Age</h3>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr>
+                <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Age</th>
+                <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Monthly</th>
+                <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">vs FRA</th>
+                <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Annual</th>
+                <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Total to <span id="ss-life-col">85</span></th>
+              </tr>
+            </thead>
+            <tbody id="ss-benefit-tbody"></tbody>
+          </table>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted)">★ = Your Full Retirement Age (FRA)</div>
+      </div>
+
+      <div class="proj-card">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:6px">Breakeven Analysis</h3>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:10px">At what age does waiting start to pay off?</p>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Comparison</th>
+              <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Extra/mo</th>
+              <th style="text-align:left;padding:5px 8px;font-size:10px;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border)">Breakeven</th>
+            </tr>
+          </thead>
+          <tbody id="ss-breakeven-tbody"></tbody>
+        </table>
+        <div style="margin-top:12px;padding:10px 12px;background:rgba(255,255,255,.03);border-radius:6px;font-size:12px;color:var(--muted)">
+          Delaying SS from FRA to 70 adds ~8%/yr permanently. If you live past the breakeven age, delaying wins.
+        </div>
+      </div>
+    </div>
+
+    <!-- Spouse / survivor -->
+    <div class="proj-card" style="margin-bottom:16px">
+      <details id="ss-spouse-details">
+        <summary style="cursor:pointer;font-size:14px;font-weight:700;list-style:none;display:flex;align-items:center;gap:8px;outline:none"
+          onclick="setTimeout(()=>renderSSOptimizer(),0)">
+          <span style="color:var(--muted);font-size:12px;transition:.15s" id="ss-spouse-arrow">&#9654;</span>
+          Spouse &amp; Survivor Analysis
+        </summary>
+        <div style="margin-top:16px">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:14px">
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Spouse Birth Year</label>
+              <input type="number" id="ss-spouse-birth-year" placeholder="e.g. 1972" min="1930" max="2005"
+                style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:14px"
+                oninput="renderSSOptimizer()">
+            </div>
+            <div>
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Spouse FRA Monthly Benefit ($)</label>
+              <input type="number" id="ss-spouse-benefit" placeholder="0 if no own benefit" min="0" max="15000"
+                style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:14px"
+                oninput="renderSSOptimizer()">
+            </div>
+          </div>
+          <div id="ss-spouse-result">
+            <p style="color:var(--muted);font-size:13px">Enter spouse info above to see spousal benefit analysis.</p>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <div style="font-size:12px;color:var(--muted);text-align:center;padding-bottom:20px">
+      Amounts shown in today's dollars. COLA adjustments will increase nominal payments over time.
+      Get your personalized estimate at <a href="https://www.ssa.gov/myaccount/" target="_blank" style="color:var(--blue)">ssa.gov/myaccount</a>.
+    </div>
+  </div><!-- /ptab-ss -->
+
 </main>
 <script>
 function el(id) { return document.getElementById(id); }
@@ -2233,6 +2375,267 @@ function resetAll() {
   updateSsiCalc();
   if (hasSaved) renderRetire();
 })();
+
+
+// ── Social Security Optimizer ──────────────────────────────────────────────
+
+function ssGetFRAMonths(birthYear) {
+  if (birthYear <= 1937) return 780;
+  if (birthYear === 1938) return 782;
+  if (birthYear === 1939) return 784;
+  if (birthYear === 1940) return 786;
+  if (birthYear === 1941) return 788;
+  if (birthYear === 1942) return 790;
+  if (birthYear <= 1954) return 792;
+  if (birthYear === 1955) return 794;
+  if (birthYear === 1956) return 796;
+  if (birthYear === 1957) return 798;
+  if (birthYear === 1958) return 800;
+  if (birthYear === 1959) return 802;
+  return 804; // 1960+ → age 67
+}
+
+function ssFormatFRA(fm) {
+  const y = Math.floor(fm/12), m = fm%12;
+  return m ? 'age ' + y + ' and ' + m + ' months' : 'age ' + y;
+}
+
+function ssBenefit(fraMonthly, fraMonths, claimMonths) {
+  const diff = claimMonths - fraMonths;
+  if (!diff) return fraMonthly;
+  if (diff > 0) return fraMonthly * (1 + Math.min(diff, 36) * (2/3) / 100);
+  const e = -diff, f = Math.min(e, 36), r = Math.max(0, e-36);
+  return fraMonthly * (1 - (f * 5/9 + r * 5/12) / 100);
+}
+
+let _ssChart = null;
+
+function renderSSOptimizer() {
+  const birthYear = parseInt(el('ss-birth-year')?.value) || 1969;
+  const fraBenefit = parseFloat(el('ss-fra-benefit')?.value) || 0;
+  const lifeExp = parseInt(el('ss-life-exp-val')?.value || el('ss-life-exp')?.value) || 85;
+
+  const fraMonths = ssGetFRAMonths(birthYear);
+  const fraAge = fraMonths / 12;
+  const fraRounded = Math.round(fraAge * 10) / 10;
+
+  const fraDisp = el('ss-fra-display');
+  if (fraDisp) fraDisp.textContent = ssFormatFRA(fraMonths);
+
+  const lc = el('ss-life-col');
+  if (lc) lc.textContent = lifeExp;
+
+  if (!fraBenefit) {
+    if (_ssChart) { _ssChart.destroy(); _ssChart = null; }
+    const rec = el('ss-recommendation');
+    if (rec) { rec.style.display='none'; rec.innerHTML=''; }
+    return;
+  }
+
+  // Claim ages: 62, 64, FRA (rounded down to nearest integer), 68, 70
+  const fraInt = Math.floor(fraAge);
+  const claimAges = [...new Set([62, 64, fraInt, 68, 70])].sort((a,b)=>a-b).filter(a=>a>=62&&a<=70);
+
+  const palette = ['#f26b6b','#f5c842','#4f8ef7','#a78bfa','#3ecf8e'];
+  const maxAge = Math.max(lifeExp + 5, 90);
+  const ages = Array.from({length: maxAge - 61}, (_, i) => 62 + i);
+
+  const datasets = claimAges.map((ca, i) => {
+    const monthly = ssBenefit(fraBenefit, fraMonths, ca * 12);
+    const annual = monthly * 12;
+    const isFRA = ca === fraInt;
+    return {
+      label: 'Age ' + ca + (isFRA ? ' (FRA)' : '') + ' — $' + Math.round(monthly).toLocaleString() + '/mo',
+      data: ages.map(a => a < ca ? 0 : Math.round((a - ca) * annual)),
+      borderColor: palette[i % palette.length],
+      backgroundColor: 'transparent',
+      borderWidth: isFRA ? 2.5 : 1.5,
+      borderDash: isFRA ? [] : (ca < fraAge ? [5,3] : []),
+      pointRadius: 0,
+      tension: 0.1,
+    };
+  });
+
+  // Life-expectancy dashed vertical annotation via a dataset trick
+  const leIdx = ages.indexOf(lifeExp);
+  if (leIdx >= 0) {
+    const leMax = Math.max(...datasets.map(d => d.data[leIdx] || 0));
+    datasets.push({
+      label: 'Life expectancy (' + lifeExp + ')',
+      data: ages.map((a, i) => i === leIdx ? leMax * 1.05 : null),
+      borderColor: 'rgba(255,255,255,.25)',
+      backgroundColor: 'rgba(255,255,255,.05)',
+      borderWidth: 1.5,
+      borderDash: [4,4],
+      pointRadius: 0,
+      spanGaps: false,
+    });
+  }
+
+  const ctx = el('ss-chart');
+  if (!ctx) return;
+  if (_ssChart) { _ssChart.destroy(); _ssChart = null; }
+  _ssChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: ages, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#d4d6e0', font: { size: 11 }, usePointStyle: true, pointStyleWidth: 16, filter: item => !item.text.startsWith('Life') } },
+        tooltip: {
+          callbacks: {
+            label: c => {
+              if (c.dataset.label.startsWith('Life')) return 'Life expectancy: ' + lifeExp;
+              return c.dataset.label.split('—')[0].trim() + ': $' + c.parsed.y.toLocaleString() + ' total';
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: '#7b7f96', maxTicksLimit: 15 },
+          grid: { color: 'rgba(255,255,255,.04)' },
+          title: { display: true, text: 'Your Age', color: '#7b7f96' },
+        },
+        y: {
+          ticks: { color: '#7b7f96', callback: v => '$' + (v >= 1e6 ? (v/1e6).toFixed(1) + 'M' : (v/1000).toFixed(0) + 'k') },
+          grid: { color: 'rgba(255,255,255,.04)' },
+          title: { display: true, text: 'Cumulative SS Received', color: '#7b7f96' },
+        },
+      },
+      animation: { duration: 250 },
+    },
+  });
+
+  _renderSSBenefitTable(fraBenefit, fraMonths, fraInt, lifeExp);
+  _renderSSBreakevenTable(fraBenefit, fraMonths, claimAges, fraInt);
+  _renderSSRecommendation(fraBenefit, fraMonths, fraInt, lifeExp);
+  _renderSSSpouse(fraBenefit, fraMonths, fraAge);
+}
+
+function _renderSSBenefitTable(fraBenefit, fraMonths, fraInt, lifeExp) {
+  const tbody = el('ss-benefit-tbody');
+  if (!tbody) return;
+  let h = '';
+  for (let age = 62; age <= 70; age++) {
+    const m = ssBenefit(fraBenefit, fraMonths, age * 12);
+    const annual = m * 12;
+    const totalToLE = lifeExp > age ? Math.round((lifeExp - age) * annual) : 0;
+    const pct = (m / fraBenefit - 1) * 100;
+    const isFRA = age === fraInt;
+    const pctCol = pct > 0 ? '#3ecf8e' : pct < 0 ? '#f26b6b' : '#7b7f96';
+    const pctStr = pct === 0 ? 'FRA' : (pct > 0 ? '+' : '') + pct.toFixed(1) + '%';
+    h += '<tr style="background:' + (isFRA ? 'rgba(79,142,247,.08)' : '') + '">' +
+      '<td style="padding:5px 8px;font-weight:' + (isFRA?700:400) + ';color:' + (isFRA?'#4f8ef7':'var(--text)') + '">' + age + (isFRA?' &#9733;':'') + '</td>' +
+      '<td style="padding:5px 8px">$' + Math.round(m).toLocaleString() + '</td>' +
+      '<td style="padding:5px 8px;color:' + pctCol + '">' + pctStr + '</td>' +
+      '<td style="padding:5px 8px">$' + Math.round(annual).toLocaleString() + '</td>' +
+      '<td style="padding:5px 8px;color:var(--muted)">$' + totalToLE.toLocaleString() + '</td>' +
+      '</tr>';
+  }
+  tbody.innerHTML = h;
+}
+
+function _renderSSBreakevenTable(fraBenefit, fraMonths, claimAges, fraInt) {
+  const tbody = el('ss-breakeven-tbody');
+  if (!tbody) return;
+  let h = '';
+  for (let i = 0; i < claimAges.length - 1; i++) {
+    const early = claimAges[i], late = claimAges[i+1];
+    const mEarly = ssBenefit(fraBenefit, fraMonths, early * 12);
+    const mLate = ssBenefit(fraBenefit, fraMonths, late * 12);
+    const diffMo = mLate - mEarly;
+    const forgo = mEarly * (late - early) * 12;
+    const beYrs = diffMo > 0 ? forgo / (diffMo * 12) : Infinity;
+    const beAge = late + beYrs;
+    const beLabel = isFinite(beAge) ? 'Age ' + (Math.round(beAge * 10) / 10) : 'Never';
+    h += '<tr>' +
+      '<td style="padding:5px 8px;color:var(--muted)">Age ' + early + (early===fraInt?' &#9733;':'') + ' &rarr; ' + late + (late===fraInt?' &#9733;':'') + '</td>' +
+      '<td style="padding:5px 8px;color:#3ecf8e">+$' + Math.round(diffMo).toLocaleString() + '/mo</td>' +
+      '<td style="padding:5px 8px;font-weight:600;color:' + (beAge < 88 ? '#4f8ef7' : '#7b7f96') + '">' + beLabel + '</td>' +
+      '</tr>';
+  }
+  tbody.innerHTML = h;
+}
+
+function _renderSSRecommendation(fraBenefit, fraMonths, fraInt, lifeExp) {
+  const recEl = el('ss-recommendation');
+  if (!recEl) return;
+  let bestAge = 62, bestTotal = 0;
+  for (let age = 62; age <= 70; age++) {
+    const total = lifeExp > age ? (lifeExp - age) * ssBenefit(fraBenefit, fraMonths, age * 12) * 12 : 0;
+    if (total > bestTotal) { bestTotal = total; bestAge = age; }
+  }
+  const monthly = Math.round(ssBenefit(fraBenefit, fraMonths, bestAge * 12));
+  const isFRA = bestAge === fraInt;
+  const lbl = bestAge === 70 ? 'age 70 (maximum)' : isFRA ? 'age ' + bestAge + ' (your FRA)' : 'age ' + bestAge;
+  const earlyNote = bestAge < fraInt
+    ? '<div style="margin-top:5px;font-size:12px;color:var(--muted)">Claiming before FRA reduces your benefit permanently. Consider delaying if health and other income allow.</div>'
+    : '';
+  recEl.style.display = '';
+  recEl.innerHTML = '<div style="background:rgba(62,207,142,.08);border:1px solid rgba(62,207,142,.3);border-radius:8px;padding:12px 16px;font-size:14px">' +
+    '&#10003; <strong>Optimal for life expectancy ' + lifeExp + ':</strong> Claiming at <strong>' + lbl + '</strong> maximizes lifetime SS &mdash; ~$' + Math.round(bestTotal).toLocaleString() + ' total at $' + monthly.toLocaleString() + '/mo.' +
+    earlyNote + '</div>';
+}
+
+function _renderSSSpouse(primaryFraBenefit, primaryFraMonths, primaryFraAge) {
+  const spBenefit = parseFloat(el('ss-spouse-benefit')?.value) || 0;
+  const spYear = parseInt(el('ss-spouse-birth-year')?.value) || 0;
+  const cont = el('ss-spouse-result');
+  if (!cont) return;
+  if (!spBenefit && !spYear) {
+    cont.innerHTML = '<p style="color:var(--muted);font-size:13px">Enter spouse info above to see spousal benefit analysis.</p>';
+    return;
+  }
+  const spousal = primaryFraBenefit * 0.5;
+  const useOwn = spBenefit > spousal;
+  let h = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">' +
+    '<div class="proj-stat-card"><div class="proj-stat-label">SPOUSE OWN BENEFIT</div><div class="proj-stat-val">' + (spBenefit ? '$' + Math.round(spBenefit).toLocaleString() : '&mdash;') + '<span class="proj-stat-sub">/mo at FRA</span></div></div>' +
+    '<div class="proj-stat-card"><div class="proj-stat-label">SPOUSAL BENEFIT (50%)</div><div class="proj-stat-val">$' + Math.round(spousal).toLocaleString() + '<span class="proj-stat-sub">/mo</span></div></div>' +
+    '</div>';
+  if (useOwn) {
+    h += '<div style="background:rgba(62,207,142,.08);border:1px solid rgba(62,207,142,.3);border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:10px">' +
+      '&#10003; <strong>Spouse claims their own benefit</strong> ($' + Math.round(spBenefit).toLocaleString() + '/mo) &mdash; it exceeds the spousal amount. Spouse should optimize their own claim age independently.' +
+      (spYear ? '<div style="margin-top:6px;color:var(--muted)">Spouse FRA: ' + ssFormatFRA(ssGetFRAMonths(spYear)) + '</div>' : '') +
+      '</div>';
+  } else {
+    h += '<div style="background:rgba(79,142,247,.08);border:1px solid rgba(79,142,247,.3);border-radius:8px;padding:12px 16px;font-size:13px;margin-bottom:10px">' +
+      '&#8505; <strong>Spouse receives spousal benefit</strong> ($' + Math.round(spousal).toLocaleString() + '/mo) &mdash; higher than their earned benefit. Note: spousal benefit is <em>not</em> increased by waiting past FRA.' +
+      (spYear ? '<div style="margin-top:6px;color:var(--muted)">Spouse FRA: ' + ssFormatFRA(ssGetFRAMonths(spYear)) + '</div>' : '') +
+      '</div>';
+  }
+  const survivorBonus = Math.round(ssBenefit(primaryFraBenefit, primaryFraMonths, 70*12) - primaryFraBenefit);
+  h += '<div style="background:rgba(245,200,66,.06);border:1px solid rgba(245,200,66,.2);border-radius:8px;padding:12px 16px;font-size:13px;color:var(--muted)">' +
+    '<strong style="color:#f5c842">Survivor benefit:</strong> If you predecease your spouse, they receive 100% of <em>your</em> benefit &mdash; including any delayed credits.' +
+    (survivorBonus > 0 ? ' Delaying from age ' + Math.floor(primaryFraAge) + ' to 70 could increase their survivor payment by $' + survivorBonus.toLocaleString() + '/mo.' : '') +
+    '</div>';
+  cont.innerHTML = h;
+}
+
+function switchPageTab(name) {
+  ['retire','ss'].forEach(t => {
+    const c = el('ptab-' + t), b = el('ptab-btn-' + t);
+    if (c) c.style.display = t === name ? '' : 'none';
+    if (b) b.classList.toggle('ptab-active', t === name);
+  });
+  if (name === 'ss') {
+    // Pre-fill from retire tab on first switch
+    const ssBy = el('ss-birth-year');
+    if (ssBy && !ssBy.dataset.prefilled) {
+      const bd = el('ret-birthdate-self')?.value;
+      if (bd) { const by = parseInt(bd.slice(0,4)); if (by > 1900) ssBy.value = by; }
+      ssBy.dataset.prefilled = '1';
+    }
+    const ssFb = el('ss-fra-benefit');
+    if (ssFb && !ssFb.dataset.prefilled) {
+      const sv = +(el('ret-ssi-self-val')?.value || el('ret-ssi-self')?.value) || 0;
+      if (sv > 0) ssFb.value = sv;
+      ssFb.dataset.prefilled = '1';
+    }
+    renderSSOptimizer();
+  }
+}
 
 </script>
 </body>
