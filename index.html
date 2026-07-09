@@ -2085,7 +2085,7 @@ function _updateBalTotal() {
   if (!hasSaved) {
     const bd = el('ret-birthdate-self')?.value;
     if (bd) {
-      const retYr = new Date(bd).getFullYear() + 67;
+      const retYr = parseInt(bd.slice(0, 4)) + 67;
       if (el('ret-retire-date')) el('ret-retire-date').value = retYr;
     }
   }
