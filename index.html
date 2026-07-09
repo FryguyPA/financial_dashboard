@@ -586,6 +586,7 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
 .tip:hover .tip-text{display:block}
 .tip .tip-text::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1c2128}
 .disclaimer{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:8px 14px;font-size:11px;color:#f85149;font-weight:600;letter-spacing:.03em;margin-top:8px;display:inline-block}
+.rate-btn{background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:3px 10px;font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s,background .15s;white-space:nowrap}.rate-btn:hover{border-color:var(--blue);color:var(--text)}.rate-btn.rate-active{background:var(--blue);border-color:var(--blue);color:#fff}
 </style>
 </head>
 <body>
@@ -697,8 +698,15 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
         </div>
         <div class="slider-row">
           <label>Expected return % <span class="tip">?<span class="tip-text">Average annual investment return. The S&P 500 has averaged ~10% historically; 6-7% is common after inflation. Higher = more optimistic projection.</span></span></label>
-          <input type="range" id="ret-rate" min="0" max="12" step="0.5" value="7" oninput="renderRetire()">
-          <input type="number" id="ret-rate-val" min="0" max="20" step="0.5" value="7" oninput="el('ret-rate').value=this.value;renderRetire()">
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div style="display:flex;gap:5px">
+              <button class="rate-btn" id="rate-btn-bear" onclick="setRate(4)" title="Bear: conservative / bond-heavy">🐻 Bear 4%</button>
+              <button class="rate-btn rate-active" id="rate-btn-normal" onclick="setRate(7)" title="Normal: balanced portfolio long-run avg">📈 Normal 7%</button>
+              <button class="rate-btn" id="rate-btn-bull" onclick="setRate(10)" title="Bull: aggressive / S&P 500 historical avg">🐂 Bull 10%</button>
+            </div>
+            <input type="range" id="ret-rate" min="0" max="12" step="0.5" value="7" oninput="setRate(+this.value,true)">
+          </div>
+          <input type="number" id="ret-rate-val" min="0" max="20" step="0.5" value="7" oninput="setRate(+this.value,true)">
         </div>
         <div class="slider-row" title="Annual standard deviation of returns. S&P 500 historical ≈ 15-18%. Lower = bonds-heavy, higher = volatile stocks.">
           <label>Volatility % <span class="tip">?<span class="tip-text">Standard deviation of annual returns — how bumpy the ride is. S&P 500 is ~15-18%. Higher volatility increases sequence-of-returns risk early in retirement.</span></span></label>
@@ -2080,6 +2088,22 @@ function _updateBalTotal() {
 
 
 
+
+function setRate(v, fromSlider) {
+  const s = el('ret-rate'), n = el('ret-rate-val');
+  if(s) s.value = v;
+  if(n) n.value = v;
+  // Update active button
+  [['rate-btn-bear',4],['rate-btn-normal',7],['rate-btn-bull',10]].forEach(([id,val])=>{
+    const b = el(id); if(b) b.classList.toggle('rate-active', v==val);
+  });
+  // Also clear active if custom value
+  document.querySelectorAll('.rate-btn').forEach(b => {
+    const bv = b.textContent.match(/\d+/)?.[0];
+    if(bv) b.classList.toggle('rate-active', +bv === +v);
+  });
+  renderRetire();
+}
 function rmdStartAge(birthYear) {
   if (birthYear >= 1960) return 75;
   if (birthYear >= 1951) return 73;
