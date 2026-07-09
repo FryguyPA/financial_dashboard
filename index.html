@@ -599,7 +599,7 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
   <div id="portfolio-card" class="proj-card" style="margin-bottom:16px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
       <h3 style="font-size:15px;font-weight:700;margin:0">Current Portfolio Balances</h3>
-      <button onclick="renderRetire()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer">&#9654; Calculate</button>
+      <div style="display:flex;gap:8px;align-items:center"><button onclick="renderRetire()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer">&#9654; Calculate</button><button onclick="resetAll()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer" onmouseover="this.style.borderColor='#f85149';this.style.color='#f85149'" onmouseout="this.style.borderColor='';this.style.color=''">&#8635; Reset</button></div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:10px">
       <div>
@@ -2076,6 +2076,61 @@ function _updateBalTotal() {
   const te = el('bal-total');
   if(te) te.textContent = fmt(tot);
   if(typeof saveRetireInputs==='function') saveRetireInputs();
+}
+
+function resetAll() {
+  if (!confirm('Reset all values to defaults? This cannot be undone.')) return;
+  localStorage.removeItem(RETIRE_LS_KEY);
+  localStorage.removeItem('retire-hide-values');
+
+  // Reset balance inputs
+  ['bal-ira','bal-401k','bal-roth','bal-hsa','bal-taxable'].forEach(id => {
+    const el2 = el(id); if(el2) el2.value = 0;
+  });
+  _updateBalTotal();
+
+  // Reset sliders + number pairs to HTML defaults
+  const defaults = {
+    'ret-contrib':1500,'ret-rate':7,'ret-vol':15,'ret-expenses':80000,
+    'ret-extra-amt':0,'ret-extra-stop-year': new Date().getFullYear()+5,
+    'ret-ssi-self':0,'ret-ssi-spouse':0,
+    'roth-from-year': new Date().getFullYear()+5,
+    'roth-to-year':   new Date().getFullYear()+10,
+    'roth-other-inc':0,'roth-bracket':12,
+  };
+  Object.entries(defaults).forEach(([id, val]) => {
+    const s = el(id), n = el(id+'-val');
+    if(s) s.value = val;
+    if(n) n.value = val;
+  });
+
+  // Reset contribution to 0
+  ['ret-contrib','ret-contrib-val'].forEach(id => { const e=el(id); if(e) e.value=0; });
+
+  // Reset birthdates
+  const bd = el('ret-birthdate-self'); if(bd) bd.value = '1969-01-01';
+  const bs = el('ret-birthdate-spouse'); if(bs) bs.value = '1969-01-01';
+
+  // Reset retirement date to birthYear + 67
+  const retYr = 1969 + 67;
+  const rdy = el('ret-retire-date'), rdm = el('ret-retire-month'), rdd = el('ret-retire-day');
+  if(rdy) rdy.value = retYr;
+  if(rdm) rdm.value = 1;
+  if(rdd) rdd.value = 1;
+
+  // Reset checkboxes
+  const ssiOn = el('ret-ssi-on'); if(ssiOn) ssiOn.checked = true;
+  const extOn = el('ret-extra-on'); if(extOn) extOn.checked = true;
+
+  // Reset hide state
+  ['tab-retire','portfolio-card'].forEach(id => {
+    const e = el(id); if(e) e.classList.remove('retire-hide-values');
+  });
+  const btn = el('retire-blur-btn');
+  if(btn) { btn.classList.add('showing'); btn.textContent = '\uD83D\uDD12 Private'; }
+
+  syncAgeFromBirth(); syncRetireAge(); toggleSsi(); toggleExtraContrib(); updateSsiCalc();
+  renderRetire();
 }
 (function init() {
   const hasSaved = !!localStorage.getItem(RETIRE_LS_KEY);
