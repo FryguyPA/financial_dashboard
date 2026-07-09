@@ -668,13 +668,13 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
         <div class="slider-row">
           <label>Retirement date</label>
           <span style="display:inline-flex;align-items:center;gap:4px;flex-shrink:0">
-            <input type="number" id="ret-retire-date" value="2034" min="2024" max="2075" step="1"
+            <input type="number" id="ret-retire-date" value="2036" min="2024" max="2075" step="1"
               style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:13px;width:74px;text-align:center"
               oninput="syncRetireAge();renderRetire()">
             <select id="ret-retire-month"
               style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 5px;font-size:13px"
               onchange="renderCountdown();saveRetireInputs()"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12" selected>Dec</option></select>
-            <input type="number" id="ret-retire-day" value="2" min="1" max="31" step="1"
+            <input type="number" id="ret-retire-day" value="1" min="1" max="31" step="1"
               style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 6px;font-size:13px;width:50px;text-align:center"
               oninput="renderCountdown();saveRetireInputs()">
           </span>
@@ -692,8 +692,8 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
       <div>
         <div class="slider-row">
           <label>Monthly contribution <span class="tip">?<span class="tip-text">Extra money added to your portfolio each month during accumulation, on top of any employer plan contributions.</span></span></label>
-          <input type="range" id="ret-contrib" min="0" max="5000" step="100" value="1500" oninput="renderRetire()">
-          <input type="number" id="ret-contrib-val" min="0" max="99999" step="100" value="1500" oninput="el('ret-contrib').value=this.value;renderRetire()">
+          <input type="range" id="ret-contrib" min="0" max="5000" step="100" value="0" oninput="renderRetire()">
+          <input type="number" id="ret-contrib-val" min="0" max="99999" step="100" value="0" oninput="el('ret-contrib').value=this.value;renderRetire()">
         </div>
         <div class="slider-row">
           <label>Expected return % <span class="tip">?<span class="tip-text">Average annual investment return. The S&P 500 has averaged ~10% historically; 6-7% is common after inflation. Higher = more optimistic projection.</span></span></label>
@@ -1485,7 +1485,7 @@ function renderRothPlanner() {
 
 // Countdown to retirement date — reads from the date picker.
 function renderCountdown() {
-  const _rYear  = parseInt(el('ret-retire-date')?.value)  || 2034;
+  const _rYear  = parseInt(el('ret-retire-date')?.value)  || 2036;
   const _rMonth = parseInt(el('ret-retire-month')?.value) || 12;
   const _rDay   = parseInt(el('ret-retire-day')?.value)   || 1;
   const target  = new Date(_rYear, _rMonth - 1, _rDay);
@@ -2081,6 +2081,14 @@ function _updateBalTotal() {
   const hasSaved = !!localStorage.getItem(RETIRE_LS_KEY);
   restoreRetireInputs();
   _updateBalTotal();
+  // Default retirement year = birthYear + 67 (only when no saved data)
+  if (!hasSaved) {
+    const bd = el('ret-birthdate-self')?.value;
+    if (bd) {
+      const retYr = new Date(bd).getFullYear() + 67;
+      if (el('ret-retire-date')) el('ret-retire-date').value = retYr;
+    }
+  }
   syncAgeFromBirth();
   syncRetireAge();
   toggleSsi();
