@@ -660,7 +660,7 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
           <label>Your birthday</label>
           <input type="date" id="ret-birthdate-self" value="1969-01-01"
             style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:13px;width:160px"
-            oninput="syncAgeFromBirth();renderRetire()">
+            oninput="syncAgeFromBirth();autoRetireYear();renderRetire()">
           <span id="ret-age-display" style="font-size:12px;color:var(--muted);min-width:60px">age —</span>
         </div>
         <input type="hidden" id="ret-age" value="54">
@@ -2078,6 +2078,16 @@ function _updateBalTotal() {
   if(typeof saveRetireInputs==='function') saveRetireInputs();
 }
 
+
+function autoRetireYear() {
+  const bd = el('ret-birthdate-self')?.value;
+  if (!bd) return;
+  const yr = parseInt(bd.slice(0, 4));
+  if (!yr) return;
+  const rdy = el('ret-retire-date');
+  if (rdy) rdy.value = yr + 67;
+  syncRetireAge();
+}
 function resetAll() {
   if (!confirm('Reset all values to defaults? This cannot be undone.')) return;
   localStorage.removeItem(RETIRE_LS_KEY);
