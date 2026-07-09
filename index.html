@@ -860,7 +860,7 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
   <div class="proj-card" id="roth-planner-card">
     <h3 style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px" onclick="toggleRothPlanner()">
       💸 Roth Conversion Planner
-      <span class="proj-sub" style="font-weight:400;font-size:11px;flex:1">gap-year bracket filling · lower future RMDs · tax-free growth</span>
+      <span class="proj-sub" style="font-weight:400;font-size:11px;flex:1">gap-year bracket filling · lower future RMDs · tax-free growth <span class="tip">?<span class="tip-text">Roth conversions: move money from your pre-tax IRA/401k to a tax-free Roth during low-income years. You pay tax now at today's (lower) bracket instead of later when RMDs force draws at a potentially higher rate.</span></span></span>
       <span id="roth-chevron" style="font-size:13px;color:var(--muted)">▼</span>
     </h3>
     <div id="roth-body">
@@ -878,7 +878,7 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
               <span id="roth-roth-bal-src" class="proj-sub" style="font-size:11px;margin-left:6px"></span></span>
           </div>
           <div class="slider-row">
-            <label>Conversion window</label>
+            <label>Conversion window <span class="tip">?<span class="tip-text">The years between retirement and when Social Security or RMDs begin — often the lowest-income years of your life and the ideal window for Roth conversions.</span></span></label>
             <span style="display:flex;gap:6px;align-items:center;font-size:13px">
               <input type="number" id="roth-from-year" value="2035" min="2024" max="2060"
                 style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 6px;font-size:13px;width:68px;text-align:center"
@@ -907,7 +907,7 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
             <input type="hidden" id="roth-bracket" value="12">
           </div>
           <div class="slider-row">
-            <label>Market return %</label>
+            <label>Market return % <span class="tip">?<span class="tip-text">Reads from your Expected Return % assumption above. Used to project how your IRA/Roth balances grow during the conversion window.</span></span></label>
             <span style="font-size:13px;color:var(--muted)">reads from <b style="color:var(--text)" id="roth-rate-display">—</b> (Assumptions)</span>
           </div>
           <div class="slider-row">
@@ -915,7 +915,7 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
             <span style="font-size:13px;color:var(--muted)">reads from <b style="color:var(--text)" id="roth-exp-display">—</b> (Assumptions)</span>
           </div>
           <div class="slider-row">
-            <label>Bracket inflation</label>
+            <label>Bracket inflation <span class="tip">?<span class="tip-text">Tax brackets are adjusted for inflation each year by the IRS. At 3%/yr, the 12% bracket ceiling grows over time, giving you slightly more room to convert each year.</span></span></label>
             <span style="font-size:12px;color:var(--muted)">3% / yr (IRS historical avg)</span>
           </div>
         </div>
@@ -952,19 +952,19 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
             <tr>
               <th style="text-align:left">Year</th>
               <th>Age</th>
-              <th>Std Deduct</th>
-              <th>Other Inc</th>
-              <th>Expense Draw</th>
-              <th style="color:var(--blue)">Bracket Room</th>
-              <th style="color:var(--green)">Roth Conv.</th>
-              <th style="color:var(--orange)">Tax Cost</th>
-              <th>Eff Rate</th>
-              <th>IRA Bal</th>
-              <th>401K Bal</th>
-              <th style="color:var(--teal,#2bbbad)">HSA Bal</th>
-              <th style="color:var(--green)">Roth Bal</th>
-              <th>Excess</th>
-              <th style="color:var(--purple)">Taxable Bal</th>
+              <th>Std Deduct <span class="tip">?<span class="tip-text">Standard deduction for MFJ (Married Filing Jointly), inflated at 3%/yr from the 2025 base of $29,200. Reduces taxable income before bracket math.</span></span></th>
+              <th>Other Inc <span class="tip">?<span class="tip-text">Other taxable income you entered (part-time work, dividends, pension, etc.). Added to the conversion when calculating bracket room.</span></span></th>
+              <th>Expense Draw <span class="tip">?<span class="tip-text">Annual spending drawn from your portfolio each year during the conversion window — reduces the Roth balance available for conversions.</span></span></th>
+              <th style="color:var(--blue)">Bracket Room <span class="tip">?<span class="tip-text">How much more income fits inside your target bracket after accounting for the standard deduction and other income. This is the maximum you can convert this year without crossing into a higher bracket.</span></span></th>
+              <th style="color:var(--green)">Roth Conv. <span class="tip">?<span class="tip-text">Amount actually converted from traditional IRA/401k to Roth this year — capped at available bracket room and limited to the remaining pre-tax balance.</span></span></th>
+              <th style="color:var(--orange)">Tax Cost <span class="tip">?<span class="tip-text">Estimated federal income tax on the converted amount at your marginal rate. State taxes not included. Assumes taxes are paid from your expense budget, not from the IRA.</span></span></th>
+              <th>Eff Rate <span class="tip">?<span class="tip-text">Effective (average) tax rate on the converted amount — total tax divided by conversion amount. Usually lower than your marginal bracket because lower income is taxed at lower rates first.</span></span></th>
+              <th>IRA Bal <span class="tip">?<span class="tip-text">Traditional IRA balance at end of year after growth, conversions, and any expense draws. This is the account subject to future RMDs.</span></span></th>
+              <th>401K Bal <span class="tip">?<span class="tip-text">401k/403b balance at end of year. Also pre-tax and subject to RMDs. Shown separately since you may have different control over conversion timing vs. an IRA.</span></span></th>
+              <th style="color:var(--teal,#2bbbad)">HSA Bal <span class="tip">?<span class="tip-text">Health Savings Account balance. Grows tax-free; used here to pay Medicare costs tax-free. Not subject to RMDs and never counted in MAGI.</span></span></th>
+              <th style="color:var(--green)">Roth Bal <span class="tip">?<span class="tip-text">Roth IRA balance — grows tax-free and has no RMDs. Includes new conversions plus market growth. This is your most flexible asset in retirement.</span></span></th>
+              <th>Excess <span class="tip">?<span class="tip-text">Any income surplus above annual expenses (e.g. SS + draws exceed spending). Excess is invested in a taxable brokerage account rather than left as cash.</span></span></th>
+              <th style="color:var(--purple)">Taxable Bal <span class="tip">?<span class="tip-text">Taxable brokerage account balance — funded by any annual surplus. Gains are taxable but there are no contribution limits or RMDs.</span></span></th>
             </tr>
           </thead>
           <tbody id="roth-table-body"></tbody>
