@@ -701,7 +701,7 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
           <div style="display:flex;flex-direction:column;gap:5px">
             <div style="display:flex;gap:5px">
               <button class="rate-btn" id="rate-btn-bear" onclick="setRate(4)" title="Bear: conservative / bond-heavy">🐻 Bear 4%</button>
-              <button class="rate-btn rate-active" id="rate-btn-normal" onclick="setRate(7)" title="Normal: balanced portfolio long-run avg">📈 Normal 7%</button>
+              <button class="rate-btn rate-active" id="rate-btn-normal" onclick="setRate(7)" title="Base: balanced portfolio long-run avg">📊 Base 7%</button>
               <button class="rate-btn" id="rate-btn-bull" onclick="setRate(10)" title="Bull: aggressive / S&P 500 historical avg">🐂 Bull 10%</button>
             </div>
             <input type="range" id="ret-rate" min="0" max="12" step="0.5" value="7" oninput="setRate(+this.value,true)">
@@ -825,9 +825,18 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
     </h3>
     <!-- Scenario selector -->
     <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
-      <button id="dd-btn-bear" class="dd-scenario-btn dd-active" onclick="setDdScenario('bear')">🐻 Bear <span id="dd-rate-bear" class="proj-sub"></span></button>
-      <button id="dd-btn-base" class="dd-scenario-btn" onclick="setDdScenario('base')">📊 Base <span id="dd-rate-base" class="proj-sub"></span></button>
+      <button id="dd-btn-bear" class="dd-scenario-btn" onclick="setDdScenario('bear')">🐻 Bear <span id="dd-rate-bear" class="proj-sub"></span></button>
+      <button id="dd-btn-base" class="dd-scenario-btn dd-active" onclick="setDdScenario('base')">📊 Base <span id="dd-rate-base" class="proj-sub"></span></button>
       <button id="dd-btn-bull" class="dd-scenario-btn" onclick="setDdScenario('bull')">🐂 Bull <span id="dd-rate-bull" class="proj-sub"></span></button>
+      <span style="display:flex;align-items:center;gap:6px;margin-left:8px">
+        <label style="font-size:11px;color:var(--muted);white-space:nowrap">Custom %</label>
+        <input type="range" id="dd-custom-rate" min="0" max="15" step="0.5" value="7"
+          style="width:90px;accent-color:var(--blue);height:4px"
+          oninput="setDdCustomRate(+this.value)">
+        <input type="number" id="dd-custom-rate-val" min="0" max="30" step="0.5" value="7"
+          style="width:52px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;padding:3px 6px;text-align:right"
+          oninput="setDdCustomRate(+this.value)">
+      </span>
       <span id="dd-scenario-label" class="proj-sub" style="margin-left:4px"></span>
     </div>
     <div style="overflow-x:auto">
@@ -1639,15 +1648,28 @@ function renderRetire() {
 }
 
 // Drawdown scenario: 'bear' | 'base' | 'bull' — offset applied to configured return.
-let _ddScenario = 'bear';
+let _ddScenario = 'base';
 const DD_SCENARIO_OFFSET = {bear: -3, base: 0, bull: 3};
 
+function setDdCustomRate(v) {
+  // Clear scenario buttons, use explicit rate
+  _ddScenario = 'custom';
+  ['bear','base','bull'].forEach(k => { const b=el('dd-btn-'+k); if(b) b.classList.remove('dd-active'); });
+  const s=el('dd-custom-rate'), n=el('dd-custom-rate-val');
+  if(s) s.value=v; if(n) n.value=v;
+  renderRetire();
+}
 function setDdScenario(s) {
   _ddScenario = s;
   ['bear','base','bull'].forEach(k => {
     const b = el('dd-btn-' + k);
     if (b) b.classList.toggle('dd-active', k === s);
   });
+  // Sync custom slider to match scenario rate (preview value)
+  const rate = +(el('ret-rate-val')?.value ?? el('ret-rate').value) || 7;
+  const preview = Math.max(0.5, rate + (DD_SCENARIO_OFFSET[s] ?? 0));
+  const cs=el('dd-custom-rate'), cn=el('dd-custom-rate-val');
+  if(cs) cs.value=preview; if(cn) cn.value=preview;
   renderRetire();
 }
 
@@ -1662,7 +1684,9 @@ function renderDrawdown(startBal, retireYear, curAge, expenses, ssi, rate) {
   const explEl = el('dd-explain');
   if (!tbody) return;
 
-  const effectiveRate = Math.max(0.5, Math.min(20, rate + (DD_SCENARIO_OFFSET[_ddScenario] ?? 0)));
+  const effectiveRate = _ddScenario === 'custom'
+    ? Math.max(0.5, Math.min(20, +(el('dd-custom-rate-val')?.value || el('dd-custom-rate')?.value || rate)))
+    : Math.max(0.5, Math.min(20, rate + (DD_SCENARIO_OFFSET[_ddScenario] ?? 0)));
 
   ['bear','base','bull'].forEach(s => {
     const lbl = el('dd-rate-' + s);
@@ -1670,9 +1694,10 @@ function renderDrawdown(startBal, retireYear, curAge, expenses, ssi, rate) {
     if (lbl) lbl.textContent = `(${r.toFixed(1)}%)`;
   });
   const scenDescriptions = {
-    bear: `Conservative: ${effectiveRate.toFixed(1)}% return (−3% from your ${rate}% target)`,
-    base: `Expected: ${effectiveRate.toFixed(1)}% return (your configured rate)`,
-    bull: `Optimistic: ${effectiveRate.toFixed(1)}% return (+3% from your ${rate}% target)`,
+    bear: `Conservative: ${effectiveRate.toFixed(1)}% return (−3% from ${rate}%)`,
+    base: `Base: ${effectiveRate.toFixed(1)}% return (your configured rate)`,
+    bull: `Optimistic: ${effectiveRate.toFixed(1)}% return (+3% from ${rate}%)`,
+    custom: `Custom: ${effectiveRate.toFixed(1)}% return`,
   };
   const scenLbl = el('dd-scenario-label');
   if (scenLbl) scenLbl.textContent = scenDescriptions[_ddScenario] ?? '';
