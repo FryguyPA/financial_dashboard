@@ -2161,16 +2161,17 @@ function resetAll() {
   const hasSaved = !!localStorage.getItem(RETIRE_LS_KEY);
   restoreRetireInputs();
   _updateBalTotal();
-  // Default retirement year = birthYear + 67 (only when no saved data)
-  if (!hasSaved) {
-    const bd = el('ret-birthdate-self')?.value;
-    if (bd) {
-      const retYr = parseInt(bd.slice(0, 4)) + 67;
-      const rmdYr = parseInt(bd.slice(0, 4)) + rmdStartAge(parseInt(bd.slice(0, 4)));
-      if (el('ret-retire-date')) el('ret-retire-date').value = retYr;
-      if (el('roth-from-year')) el('roth-from-year').value = retYr;
-      if (el('roth-to-year'))   el('roth-to-year').value   = rmdYr;
+  // Always recompute Roth window from birthdate; retire year only on fresh load
+  const _bd = el('ret-birthdate-self')?.value;
+  if (_bd) {
+    const _by  = parseInt(_bd.slice(0, 4));
+    const _rmdYr = _by + rmdStartAge(_by);
+    if (!hasSaved) {
+      const _retYr = _by + 67;
+      if (el('ret-retire-date')) el('ret-retire-date').value = _retYr;
+      if (el('roth-from-year'))  el('roth-from-year').value  = _retYr;
     }
+    if (el('roth-to-year')) el('roth-to-year').value = _rmdYr;
   }
   syncAgeFromBirth();
   syncRetireAge();
