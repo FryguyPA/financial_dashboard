@@ -1301,15 +1301,15 @@ function toggleRetireValues() {
   localStorage.setItem('retire-hide-values', hiding ? '1' : '0');
 }
 (function initRetireBlur() {
-  const show = localStorage.getItem('retire-hide-values') === '0';
-  if (!show) {
+  const hidden = localStorage.getItem('retire-hide-values') === '1';
+  if (hidden) {
     const tab = document.getElementById('tab-retire');
     if (tab) tab.classList.add('retire-hide-values');
     const pc = document.getElementById('portfolio-card');
     if (pc) pc.classList.add('retire-hide-values');
   } else {
     const btn = document.getElementById('retire-blur-btn');
-    if (btn) { btn.classList.add('showing'); btn.textContent = '👁 Show'; }
+    if (btn) { btn.classList.add('showing'); btn.textContent = '🔒 Private'; }
   }
 })();
 
