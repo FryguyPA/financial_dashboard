@@ -878,13 +878,13 @@ main { padding:20px 24px; max-width:1300px; margin:0 auto; }
               <span id="roth-roth-bal-src" class="proj-sub" style="font-size:11px;margin-left:6px"></span></span>
           </div>
           <div class="slider-row">
-            <label>Conversion window <span class="tip">?<span class="tip-text">The years between retirement and when Social Security or RMDs begin — often the lowest-income years of your life and the ideal window for Roth conversions.</span></span></label>
+            <label>Conversion window <span class="tip">?<span class="tip-text">The years between retirement and when RMDs begin (age 73 for those born 1960+). Extend this window to RMD start year to see the full Roth conversion opportunity — often the lowest-income years of your life and the ideal window for Roth conversions.</span></span></label>
             <span style="display:flex;gap:6px;align-items:center;font-size:13px">
               <input type="number" id="roth-from-year" value="2035" min="2024" max="2060"
                 style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 6px;font-size:13px;width:68px;text-align:center"
                 oninput="renderRothPlanner()">
               <span style="color:var(--muted)">to</span>
-              <input type="number" id="roth-to-year" value="2040" min="2024" max="2060"
+              <input type="number" id="roth-to-year" value="2040" min="2024" max="2075"
                 style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 6px;font-size:13px;width:68px;text-align:center"
                 oninput="renderRothPlanner()">
             </span>
@@ -2084,8 +2084,14 @@ function autoRetireYear() {
   if (!bd) return;
   const yr = parseInt(bd.slice(0, 4));
   if (!yr) return;
+  const retYr = yr + 67;
+  const rmdYr = yr + 73;
   const rdy = el('ret-retire-date');
-  if (rdy) rdy.value = yr + 67;
+  if (rdy) rdy.value = retYr;
+  // Roth window: retirement year → RMD start year
+  const rfrom = el('roth-from-year'), rto = el('roth-to-year');
+  if (rfrom) rfrom.value = retYr;
+  if (rto)   rto.value   = rmdYr;
   syncRetireAge();
 }
 function resetAll() {
@@ -2123,8 +2129,11 @@ function resetAll() {
 
   // Reset retirement date to birthYear + 67
   const retYr = 1969 + 67;
+  const rmdYr = 1969 + 73;
   const rdy = el('ret-retire-date'), rdm = el('ret-retire-month'), rdd = el('ret-retire-day');
   if(rdy) rdy.value = retYr;
+  if(el('roth-from-year')) el('roth-from-year').value = retYr;
+  if(el('roth-to-year'))   el('roth-to-year').value   = rmdYr;
   if(rdm) rdm.value = 1;
   if(rdd) rdd.value = 1;
 
@@ -2151,7 +2160,10 @@ function resetAll() {
     const bd = el('ret-birthdate-self')?.value;
     if (bd) {
       const retYr = parseInt(bd.slice(0, 4)) + 67;
+      const rmdYr = parseInt(bd.slice(0, 4)) + 73;
       if (el('ret-retire-date')) el('ret-retire-date').value = retYr;
+      if (el('roth-from-year')) el('roth-from-year').value = retYr;
+      if (el('roth-to-year'))   el('roth-to-year').value   = rmdYr;
     }
   }
   syncAgeFromBirth();
