@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Retirement Calculator</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#21262d;--border:#30363d;
+  --text:#e6edf3;--muted:#8b949e;
+  --green:#3fb950;--green-dim:rgba(63,185,80,.15);
+  --blue:#58a6ff;--blue-dim:rgba(88,166,255,.12);
+  --red:#f85149;--red-dim:rgba(248,81,73,.12);
+  --yellow:#d29922;--yellow-dim:rgba(210,153,34,.12);
+  --orange:#f0883e;--purple:#bc8cff;--teal:#39d353;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--blue);text-decoration:none}
+
+/* Nav */
+nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:0;position:sticky;top:0;z-index:100}
+.nav-brand{font-size:15px;font-weight:700;padding:14px 0;margin-right:24px;display:flex;align-items:center;gap:8px}
+.nav-tab{padding:16px 16px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;white-space:nowrap}
+.nav-tab:hover{color:var(--text)}
+.nav-tab.active{color:var(--blue);border-bottom-color:var(--blue)}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:16px;font-size:12px;color:var(--muted)}
+.logout-btn{font-size:11px;color:var(--muted);cursor:pointer;background:none;border:1px solid var(--border);border-radius:5px;padding:4px 10px;transition:all .15s}
+.logout-btn:hover{color:var(--red);border-color:var(--red)}
+
+/* Layout */
+main{flex:1;padding:24px;max-width:1300px;margin:0 auto;width:100%}
+.section{display:none}
+.section.active{display:block}
+
+/* Cards */
+.card-row{display:grid;gap:12px;margin-bottom:20px}
+.card-row.cols-6{grid-template-columns:repeat(6,1fr)}
+.card-row.cols-5{grid-template-columns:repeat(5,1fr)}
+.card-row.cols-4{grid-template-columns:repeat(4,1fr)}
+.card-row.cols-3{grid-template-columns:repeat(3,1fr)}
+.card-row.cols-2{grid-template-columns:1fr 1fr}
+@media(max-width:1200px){.card-row.cols-6{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:1000px){.card-row.cols-5{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:800px){.card-row.cols-6,.card-row.cols-5,.card-row.cols-4,.card-row.cols-3{grid-template-columns:repeat(2,1fr)}}
+.ticker-wrap{overflow:hidden;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:14px;height:32px;display:flex;align-items:center}
+.ticker-track{display:flex;align-items:center;white-space:nowrap;animation:ticker-scroll 40s linear infinite}
+.ticker-track:hover{animation-play-state:paused}
+.ticker-item{display:inline-flex;align-items:center;gap:6px;padding:0 20px;border-right:1px solid var(--border);font-size:12px;font-variant-numeric:tabular-nums}
+.ticker-sym{font-weight:700;color:var(--text)}
+.ticker-price{color:var(--muted)}
+.ticker-chg{font-weight:600}
+@keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.market-bar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.market-pill{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:12px;flex:1;min-width:140px}
+.market-pill-vals{display:flex;flex-direction:column;gap:1px}
+.market-pill-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.market-pill-price{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.market-pill-chg{font-size:10px;font-weight:600;font-variant-numeric:tabular-nums}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative}
+.stat-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:6px}
+.stat-val{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;cursor:default}
+.stat-val[data-full]::after{content:attr(data-full);position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1c2128;border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;padding:5px 12px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .1s;z-index:50;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.stat-val[data-full]:hover::after{opacity:1}
+.stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.stat-change{font-size:12px;font-weight:600;margin-top:4px}
+.stat-change.pos{color:var(--green)}
+.stat-change.neg{color:var(--red)}
+
+/* Charts */
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:20px}
+.chart-title{font-size:13px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.chart-wrap{position:relative}
+.chart-wrap canvas{width:100%!important}
+
+/* Tables */
+.section-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);margin-bottom:20px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--surface2);padding:8px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);white-space:nowrap;cursor:pointer;user-select:none;border-bottom:1px solid var(--border)}
+thead th:hover{color:var(--text)}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--surface2)}
+tbody tr.closed-row{opacity:.45}
+td{padding:8px 12px;white-space:nowrap;vertical-align:middle}
+.priority-badge{font-size:10px;font-weight:700;width:20px;height:20px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--blue-dim);color:var(--blue)}
+.status-closed{font-size:9px;background:var(--surface2);color:var(--muted);padding:1px 6px;border-radius:8px}
+.bar{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;min-width:60px;margin-top:3px}
+.bar-fill{height:100%;border-radius:2px}
+
+/* Entry form */
+.entry-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:700px){.entry-grid{grid-template-columns:1fr}}
+.entry-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.entry-header{background:var(--surface2);padding:12px 16px;font-size:12px;font-weight:700;border-bottom:1px solid var(--border)}
+.entry-row{display:flex;align-items:center;padding:7px 12px;border-bottom:1px solid var(--border);gap:8px}
+.entry-row:last-child{border-bottom:none}
+.entry-name{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.entry-hist{width:72px;background:transparent;border:1px solid transparent;border-radius:5px;color:var(--muted);font-size:11px;padding:5px 8px;text-align:right;outline:none;font-variant-numeric:tabular-nums;transition:border-color .15s,background .15s}
+.entry-hist:hover,.entry-hist:focus{border-color:var(--border);background:var(--surface2);color:var(--text)}
+.entry-input{width:100px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;padding:5px 8px;text-align:right;outline:none;font-variant-numeric:tabular-nums;transition:border-color .15s}
+.entry-input:focus{border-color:var(--blue)}
+.entry-col-header{display:flex;align-items:center;padding:6px 12px;gap:8px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.entry-col-header span{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:right;white-space:nowrap}
+.entry-col-header .ech-name{flex:1;text-align:left}
+.entry-col-header .ech-hist{width:72px}
+.entry-col-header .ech-new{width:100px}
+.hist-toggle{display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.hist-toggle button{background:var(--surface);color:var(--muted);border:none;padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.hist-toggle button.active{background:var(--blue);color:#0d1117}
+.hist-toggle button:hover:not(.active){background:var(--surface2);color:var(--text)}
+.entry-controls{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.month-select{background:var(--surface);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:14px;padding:8px 12px;outline:none;cursor:pointer}
+.save-btn{background:var(--blue);color:#0d1117;font-weight:700;font-size:13px;border:none;border-radius:7px;padding:9px 24px;cursor:pointer;transition:opacity .15s}
+.save-btn:hover{opacity:.85}
+/* Investment account cards */
+.invest-acct-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.invest-acct-hdr{display:flex;align-items:center;gap:10px;padding:11px 14px;cursor:pointer;user-select:none;transition:background .1s}
+.invest-acct-hdr:hover{background:var(--surface2)}
+.invest-acct-chevron{font-size:11px;color:var(--muted);transition:transform .2s;flex-shrink:0}
+.invest-acct-chevron.open{transform:rotate(90deg)}
+.invest-acct-name{font-size:13px;font-weight:700;flex:1}
+.invest-acct-live{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.invest-acct-saved{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.invest-acct-mom{font-size:11px;font-variant-numeric:tabular-nums}
+.invest-acct-alloc{font-size:11px;color:var(--muted);min-width:44px;text-align:right}
+.invest-acct-btns{display:flex;gap:6px;flex-shrink:0}
+.invest-holdings-wrap{display:none;border-top:1px solid var(--border)}
+.invest-holdings-wrap.open{display:block}
+.invest-col-hdr{display:flex;gap:8px;padding:5px 14px;background:var(--surface2);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.invest-holding-row{display:flex;align-items:center;gap:8px;padding:7px 14px;border-top:1px solid var(--border);font-size:12px;font-variant-numeric:tabular-nums}
+.ih-ticker{font-weight:700;color:var(--blue);min-width:58px}
+.ih-shares{color:var(--muted);min-width:80px;text-align:right}
+.ih-price{min-width:72px;text-align:right}
+.ih-value{font-weight:600;min-width:90px;text-align:right}
+.ih-chg{min-width:58px;text-align:right;font-size:11px}
+.ih-pct{min-width:46px;text-align:right;color:var(--muted);font-size:11px}
+.ih-bar-wrap{flex:1;min-width:40px}
+.ih-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.ih-bar-fill{height:100%;border-radius:2px}
+.invest-no-holdings{padding:12px 14px;font-size:12px;color:var(--muted);font-style:italic}
+.ih-spark{width:90px;flex-shrink:0}
+/* Period selector */
+.period-bar{display:flex;gap:3px;flex-wrap:wrap}
+.period-btn{background:var(--surface);border:1px solid var(--border);color:var(--muted);border-radius:5px;padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer;transition:all .12s}
+.period-btn:hover{color:var(--text);border-color:var(--text)}
+.period-btn.active{background:var(--blue);border-color:var(--blue);color:#0d1117}
+/* Holdings modal rows */
+.hm-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px}
+.hm-row:last-child{border-bottom:none}
+.hm-ticker-lbl{font-weight:700;color:var(--blue);min-width:60px}
+.hm-shares-inp{width:110px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:12px;padding:5px 8px;text-align:right}
+.hm-del{background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 6px;border-radius:4px;font-size:13px}
+.hm-del:hover{color:var(--red);background:var(--surface2)}
+.needs-update-banner{display:flex;align-items:center;gap:8px;background:#2a2000;border:1px solid #6b4f00;border-radius:8px;padding:9px 14px;font-size:12px;color:#f0b429;margin-bottom:16px}
+.tab-badge{display:inline-block;width:7px;height:7px;background:var(--yellow,#f0b429);border-radius:50%;margin-left:5px;vertical-align:middle;animation:pulse-badge 2s infinite}
+@keyframes pulse-badge{0%,100%{opacity:1}50%{opacity:.3}}
+.save-btn:disabled{opacity:.4;cursor:not-allowed}
+.show-closed-toggle{font-size:12px;color:var(--muted);cursor:pointer;background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:4px 10px;transition:all .15s}
+.show-closed-toggle:hover{color:var(--text)}
+
+/* Add debt modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 30px;width:100%;max-width:440px;display:flex;flex-direction:column;gap:16px}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:2px}
+.modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;margin-left:auto;transition:color .15s;padding:0}
+.modal-close:hover{color:var(--text)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-field{display:flex;flex-direction:column;gap:5px}
+.form-field label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.form-field input,.form-field select{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:8px 10px;outline:none;transition:border-color .15s}
+.form-field input:focus,.form-field select:focus{border-color:var(--blue)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+.btn-primary{background:var(--blue);color:#0d1117;font-weight:700;font-size:13px;border:none;border-radius:6px;padding:8px 20px;cursor:pointer;transition:opacity .15s}
+.btn-primary:hover{opacity:.85}
+.btn-cancel{background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:13px;border-radius:6px;padding:8px 16px;cursor:pointer;transition:all .15s}
+.btn-cancel:hover{color:var(--text)}
+.icon-btn-sm{background:none;border:none;cursor:pointer;font-size:12px;color:var(--muted);padding:2px 6px;border-radius:4px;transition:all .15s;white-space:nowrap}
+.icon-btn-sm:hover{background:var(--surface2);color:var(--text)}
+.icon-btn-sm.archive:hover{color:var(--yellow)}
+.icon-btn-sm.reactivate:hover{color:var(--green)}
+
+footer{text-align:center;padding:12px;font-size:11px;color:var(--muted);border-top:1px solid var(--border)}
+/* Lookup tab */
+.lookup-search-row{display:flex;gap:8px;margin-bottom:20px;position:relative;max-width:540px}
+.lookup-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:10px 14px;outline:none;transition:border-color .15s}
+.lookup-input:focus{border-color:var(--blue)}
+.lookup-ac{position:absolute;top:100%;left:0;right:60px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:50;margin-top:4px;overflow:hidden;display:none}
+.lookup-ac.open{display:block}
+.lookup-ac-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--border)}
+.lookup-ac-item:last-child{border-bottom:none}
+.lookup-ac-item:hover,.lookup-ac-item.hi{background:var(--surface2)}
+.lookup-ac-sym{font-weight:700;font-size:12px;color:var(--blue);min-width:56px}
+.lookup-ac-name{font-size:12px;color:var(--muted);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lookup-ac-type{font-size:10px;color:var(--muted)}
+.lookup-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:20px;max-width:760px;margin-bottom:20px}
+.lookup-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px}
+.lookup-ticker-big{font-size:22px;font-weight:700}
+.lookup-company{font-size:13px;color:var(--muted);margin-top:2px}
+.lookup-price{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.lookup-chg{font-size:13px;text-align:right;margin-top:2px;font-variant-numeric:tabular-nums}
+.lookup-stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px 20px;margin:12px 0}
+.lookup-stat dt{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px}
+.lookup-stat dd{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;margin:0}
+.lookup-range-row{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--muted);margin-top:10px}
+.lookup-range-track{flex:1;height:5px;background:var(--surface2);border-radius:3px;position:relative}
+.lookup-range-dot{position:absolute;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:var(--blue);border:2px solid var(--bg)}
+.earnings-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(248,177,51,.1);border:1px solid rgba(248,177,51,.3);border-radius:6px;padding:5px 12px;font-size:12px;color:#f8b133;margin-top:10px}
+/* News */
+.news-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.news-item:last-child{border-bottom:none}
+.news-thumb{width:72px;height:52px;object-fit:cover;border-radius:6px;flex-shrink:0;background:var(--surface2)}
+.news-meta{font-size:10px;color:var(--muted);margin-bottom:4px}
+.news-headline{font-size:13px;font-weight:600;line-height:1.4;margin-bottom:4px}
+.news-headline a{color:var(--text);text-decoration:none}
+.news-headline a:hover{color:var(--blue)}
+.news-summary{font-size:11px;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.news-ticker-chip{display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:1px 7px;font-size:10px;font-weight:700;color:var(--blue);margin-right:4px;cursor:pointer}
+.news-ticker-chip:hover,.news-ticker-chip.active{background:var(--blue);color:#0d1117;border-color:var(--blue)}
+/* Asset cards */
+.asset-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.asset-card-hdr{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;user-select:none;transition:background .1s}
+.asset-card-hdr:hover{background:var(--surface2)}
+.asset-icon{font-size:18px;flex-shrink:0}
+.asset-name{font-size:13px;font-weight:700;flex:1}
+.asset-value{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}
+.asset-chg{font-size:11px;font-variant-numeric:tabular-nums;min-width:80px;text-align:right}
+.asset-detail-wrap{display:none;border-top:1px solid var(--border);padding:14px 16px}
+.asset-detail-wrap.open{display:block}
+.asset-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 24px;font-size:12px;margin-bottom:14px}
+.asset-detail-grid dt{color:var(--muted)}
+.asset-detail-grid dd{font-weight:600;font-variant-numeric:tabular-nums;margin:0}
+.asset-depr-badge{display:inline-block;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 10px;font-size:11px;color:var(--muted);margin-bottom:10px}
+.asset-depr-badge span{font-weight:700;color:var(--text)}
+
+/* ── Charts tab ── */
+.ch-market-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:22px}
+.ch-market-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.ch-market-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.ch-market-price{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.ch-market-chg{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.ch-market-chg.pos{color:var(--green)}.ch-market-chg.neg{color:var(--red)}
+.ch-market-legend{display:flex;gap:12px;font-size:11px;color:var(--muted)}
+.ch-toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.ch-toolbar .ch-title{font-size:13px;font-weight:700}
+.ch-toolbar .ch-sub{font-size:11px;color:var(--muted)}
+.ch-period-tabs{display:flex;gap:4px}
+.ch-period-btn{background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:12px;padding:3px 10px;cursor:pointer;transition:all .15s}
+.ch-period-btn:hover{border-color:var(--blue);color:var(--blue)}
+.ch-period-btn.active{border-color:var(--blue);color:var(--blue);background:rgba(88,166,255,.1)}
+.ch-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.tw-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color .15s,background .15s}
+.tw-card:hover{border-color:var(--blue);background:rgba(88,166,255,.04)}
+.tw-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px}
+.tw-sym{font-size:15px;font-weight:700;font-family:monospace}
+.tw-price{font-size:15px;font-weight:600}
+.tw-chg{font-size:12px;font-weight:600}
+.tw-chg.up{color:var(--green)}.tw-chg.down{color:var(--red)}.tw-chg.flat{color:var(--muted)}
+.tw-mini{height:64px;margin:2px 0 8px}
+.tw-mini-load{height:64px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px}
+.tw-foot{display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px}
+.tw-foot b{font-weight:700}
+.ch-empty{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px;padding:40px}
+.ch-detail-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px}
+.ch-back{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:12px;padding:5px 12px;cursor:pointer;transition:all .15s}
+.ch-back:hover{color:var(--text)}
+.ch-d-sym{font-size:24px;font-weight:700;font-family:monospace}
+.ch-d-price{font-size:26px;font-weight:600;text-align:right}
+.ch-d-chg{font-size:14px;font-weight:600;text-align:right}
+.ch-d-chg.up{color:var(--green)}.ch-d-chg.down{color:var(--red)}
+.ch-chart-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+#ch-container{height:380px;position:relative}
+.ch-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;background:var(--surface)}
+#ch-rsi-wrap{border-top:1px solid var(--border)}
+.ch-rsi-header{display:flex;align-items:center;gap:10px;padding:8px 16px 4px}
+.ch-rsi-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.ch-rsi-readout{font-size:12px;font-weight:700}
+.ch-rsi-hint{margin-left:auto;font-size:10px;color:var(--muted)}
+#ch-rsi-container{height:110px;position:relative}
+.ch-legend{display:flex;flex-wrap:wrap;gap:16px;padding:10px 16px;border-top:1px solid var(--border);font-size:11px;align-items:center}
+.ch-leg-item{display:flex;align-items:center;gap:6px;color:var(--muted)}
+.ch-leg-sw{width:18px;height:0;border-top-width:3px;border-top-style:solid;flex-shrink:0}
+.ch-leg-sw.dash{border-top-style:dashed}
+.ch-leg-item b{color:var(--text);font-weight:600}
+
+/* ── Payoff & Retire tabs (shared) ── */
+.proj-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px}
+.proj-card h3{font-size:13px;font-weight:700;margin-bottom:12px}
+.proj-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.proj-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
+.proj-row-4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:800px){.proj-row{grid-template-columns:repeat(2,1fr)}}
+.proj-stat{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.proj-stat-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.proj-stat-val{font-size:22px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.proj-stat-sub{font-size:11px;color:var(--muted);margin-top:4px}
+
+.slider-row{display:grid;grid-template-columns:160px 1fr 110px;gap:14px;align-items:center;margin-bottom:10px}
+.slider-row label{font-size:12px;color:var(--muted);font-weight:600}
+.slider-row input[type=range]{width:100%;accent-color:var(--blue);height:4px}
+.slider-row .v{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.slider-row input[type=number]{background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:13px;padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums;outline:none;width:100%;cursor:text}.slider-row input[type=number]:hover{border-color:var(--blue)}.slider-row input[type=number]:focus{border-color:var(--blue);outline:2px solid rgba(88,166,255,.25);outline-offset:0}
+
+.strat-toggle{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.strat-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--muted);font-size:12px;padding:6px 14px;cursor:pointer;transition:all .15s}
+.strat-btn:hover{color:var(--text)}
+.strat-btn.active{border-color:var(--blue);color:var(--blue);background:rgba(88,166,255,.1)}
+
+.payoff-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.payoff-tbl th{background:var(--surface2);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border)}
+.payoff-tbl td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.payoff-tbl tr:last-child td{border-bottom:none}
+.payoff-tbl tr:hover td{background:var(--surface2)}
+.payoff-tbl .num{font-variant-numeric:tabular-nums;text-align:right}
+.payoff-tbl .pri-badge{display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;font-size:10px;font-weight:700;border-radius:50%;background:var(--blue-dim);color:var(--blue)}
+.payoff-bar{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;min-width:60px}
+.payoff-bar-fill{height:100%;border-radius:2px;transition:width .4s}
+
+.strat-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:800px){.strat-compare{grid-template-columns:1fr}}
+.strat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px}
+.strat-card h4{font-size:13px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.strat-card .winner{font-size:9px;font-weight:700;background:var(--green);color:#0d1117;padding:2px 6px;border-radius:8px;text-transform:uppercase;letter-spacing:.06em}
+
+.retire-input-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:800px){.retire-input-grid{grid-template-columns:1fr}}
+.retire-chart-wrap{height:280px;position:relative;margin-top:10px}
+.retire-explain{background:var(--surface2);border-left:3px solid var(--blue);border-radius:6px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.6;margin-top:12px}
+.retire-explain strong{color:var(--text)}
+.dd-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+.dd-table th{background:var(--surface2);padding:5px 8px;text-align:right;font-size:11px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}
+.dd-table th:first-child,.dd-table th:nth-child(2),.dd-table td:first-child,.dd-table td:nth-child(2){text-align:left}
+.dd-table td{padding:4px 8px;text-align:right;border-bottom:1px solid rgba(255,255,255,.04);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dd-table tr:hover td{background:rgba(255,255,255,.03)}
+.dd-table tr.dd-rmd-row td{background:rgba(240,136,62,.06)}
+.dd-table tr.dd-depleted td{color:var(--red)!important;background:rgba(248,81,73,.08)}
+.dd-irmaa-hit{color:var(--yellow)!important}
+.dd-warn-bal{color:var(--yellow)!important}
+.dd-rmd-flag{color:#f0883e!important;font-weight:600}
+.dd-scenario-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 14px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+.dd-scenario-btn:hover{border-color:var(--blue);color:var(--text)}
+.dd-scenario-btn.dd-active{background:var(--blue);border-color:var(--blue);color:#fff}
+.dd-scenario-btn.dd-active .proj-sub{color:rgba(255,255,255,.7)}
+
+/* ── Roth Conversion Planner ── */
+.roth-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.roth-tbl th{padding:7px 10px;text-align:right;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--border);white-space:nowrap}
+.roth-tbl th:first-child,.roth-tbl td:first-child{text-align:left}
+.roth-tbl td{padding:6px 10px;text-align:right;border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+.roth-tbl tr:last-child td{border-bottom:none}
+.roth-tbl tr:hover td{background:var(--surface2)}
+
+/* ── Retire blur toggle ── */
+.retire-blur-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;font-weight:600;transition:color .15s,border-color .15s;white-space:nowrap}
+.retire-blur-btn:hover{color:var(--text);border-color:var(--blue)}
+.retire-blur-btn.showing{color:var(--blue);border-color:var(--blue)}
+#tab-retire.retire-hide-values .proj-stat-val,
+#tab-retire.retire-hide-values .proj-stat-sub,
+#tab-retire.retire-hide-values canvas,
+#tab-retire.retire-hide-values #ret-start-bal,
+#tab-retire.retire-hide-values #ret-explain,
+#tab-retire.retire-hide-values #mc-explain,
+#tab-retire.retire-hide-values #dd-explain,
+#tab-retire.retire-hide-values .retire-explain,
+#tab-retire.retire-hide-values #drawdown-table-body td,
+#tab-retire.retire-hide-values #roth-table-body td,
+#tab-retire.retire-hide-values #roth-trad-bal-display,
+#tab-retire.retire-hide-values #roth-trad-bal-src,
+#tab-retire.retire-hide-values #roth-roth-bal-display,
+#tab-retire.retire-hide-values #roth-roth-bal-src,
+#tab-retire.retire-hide-values #roth-rate-display,
+#tab-retire.retire-hide-values #roth-exp-display,
+#tab-retire.retire-hide-values #roth-total-conv-val,
+#tab-retire.retire-hide-values #roth-total-tax-val,
+#tab-retire.retire-hide-values #roth-avg-rate-val,
+#tab-retire.retire-hide-values #roth-at-rmd-val,
+#tab-retire.retire-hide-values #ret-ssi-self-val,
+#tab-retire.retire-hide-values #ret-ssi-spouse-val,
+#tab-retire.retire-hide-values #ret-ssi-self-calc,
+#tab-retire.retire-hide-values #ret-ssi-spouse-calc,
+#tab-retire.retire-hide-values #ret-expenses-val,
+#tab-retire.retire-hide-values #ret-contrib-val,
+#tab-retire.retire-hide-values #ret-extra-amt-val{filter:blur(6px);user-select:none;transition:filter .2s}
+#portfolio-card.retire-hide-values input[type=number],#portfolio-card.retire-hide-values #bal-total{filter:blur(6px);user-select:none;transition:filter .2s}
+.roth-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 16px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+.roth-btn:hover{border-color:var(--green);color:var(--text)}
+.roth-btn.roth-active{background:var(--green);border-color:var(--green);color:#fff}
+
+/* ── Positions tab ── */
+.pos-tbl{width:100%;border-collapse:collapse;font-size:12px}
+.pos-tbl th{background:var(--surface2);padding:8px 10px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+.pos-tbl th:hover{color:var(--text)}
+.pos-tbl th.sorted{color:var(--blue)}
+.pos-tbl td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+.pos-tbl tr:last-child td{border-bottom:none}
+.pos-tbl tr:hover td{background:var(--surface2)}
+.pos-tbl .num{font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.pos-tbl .sym{font-family:monospace;font-weight:700;color:var(--blue)}
+.pos-ticker-link{cursor:pointer;border-bottom:1px dashed var(--blue);transition:color .12s,border-color .12s}
+.pos-ticker-link:hover{color:#a5d6ff;border-bottom-color:#a5d6ff}
+.pos-tbl .small{font-size:10px;color:var(--muted)}
+.pos-conc-bar{height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;min-width:60px;margin-top:3px}
+.pos-conc-fill{height:100%;border-radius:2px;transition:width .4s}
+.pos-conc-warn{display:inline-block;font-size:9px;font-weight:700;background:var(--red-dim);color:var(--red);padding:1px 5px;border-radius:8px;margin-left:5px}
+.pos-conc-watch{display:inline-block;font-size:9px;font-weight:700;background:var(--yellow-dim);color:var(--yellow);padding:1px 5px;border-radius:8px;margin-left:5px}
+.pos-accounts{font-size:10px;color:var(--muted)}
+
+/* Tax-bucket pill (inline on Investments tab + colored on Overview) */
+.tax-pill{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:8px;text-transform:uppercase;letter-spacing:.06em;cursor:pointer;border:1px solid transparent}
+.tax-pill:hover{outline:1px solid var(--blue)}
+.tax-pill.taxable{background:rgba(125,133,144,.15);color:var(--muted)}
+.tax-pill.pretax {background:rgba(88,166,255,.15);color:var(--blue)}
+.tax-pill.roth   {background:rgba(63,185,80,.15);color:var(--green)}
+.tax-pill.hsa    {background:rgba(188,140,255,.15);color:var(--purple)}
+.tax-pill.unset  {background:transparent;color:var(--muted);border:1px dashed var(--border)}
+.tax-select{font-size:10px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:2px 4px;outline:none;cursor:pointer}
+
+/* Tax allocation card (Overview) */
+.tax-alloc-row{display:flex;height:18px;border-radius:4px;overflow:hidden;background:var(--surface2);margin:8px 0 10px}
+.tax-alloc-seg{height:100%;transition:width .4s}
+.tax-alloc-seg.taxable{background:var(--muted)}
+.tax-alloc-seg.pretax {background:var(--blue)}
+.tax-alloc-seg.roth   {background:var(--green)}
+.tax-alloc-seg.hsa    {background:var(--purple)}
+.tax-alloc-legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px}
+.tax-alloc-legend .lk{display:inline-flex;align-items:center;gap:5px;color:var(--muted)}
+.tax-alloc-legend .lk .sw{width:10px;height:10px;border-radius:2px;display:inline-block}
+.tax-alloc-legend .lk b{color:var(--text);font-weight:700;font-variant-numeric:tabular-nums}
+
+/* ── Print / PDF export ── */
+@media print {
+  :root {
+    --bg:#ffffff; --surface:#f3f4f6; --surface2:#e5e7eb; --border:#9ca3af;
+    --text:#111827; --muted:#374151;
+    --green:#15803d; --green-dim:rgba(21,128,61,.1);
+    --blue:#1d4ed8; --blue-dim:rgba(29,78,216,.1);
+    --red:#b91c1c; --red-dim:rgba(185,28,28,.1);
+    --yellow:#92400e; --yellow-dim:rgba(146,64,14,.1);
+    --orange:#c2410c; --purple:#6d28d9; --teal:#0f766e;
+  }
+  body, nav, main, .section, table, td, th { background:white !important; color:#111827 !important; }
+  * { color:#111827 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  /* Restore semantic gain/loss colors */
+  .pos, .gain { color:#15803d !important; }
+  .neg, .loss { color:#b91c1c !important; }
+  /* Hide chrome */
+  nav, .nav-tab, .nav-brand, .nav-right,
+  button, input, select, .period-btn, .hist-toggle,
+  .lookup-wrap, .entry-header, .entry-col-header,
+  .ch-period-btn, .strat-btn, .news-ticker-chip,
+  .logout-btn { display:none !important; }
+  /* Only show active section */
+  .section { display:none !important; }
+  .section.active { display:block !important; }
+  /* Tables */
+  table { border-collapse:collapse; width:100%; }
+  th, td { border:1px solid #d1d5db !important; padding:5px 8px !important; font-size:12px !important; }
+  th { background:#f3f4f6 !important; font-weight:700; }
+  tr:nth-child(even) td { background:#f9fafb !important; }
+  /* Cards / sections */
+  .card, .section-card, .invest-card, .debt-card { page-break-inside:avoid; break-inside:avoid; border:1px solid #d1d5db !important; border-radius:6px; margin-bottom:12px; }
+  /* Page title injected via JS */
+  body::before {
+    content: "Finance Dashboard — " attr(data-print-tab) " — " attr(data-print-date);
+    display:block; font-size:16px; font-weight:700;
+    padding-bottom:8px; margin-bottom:16px;
+    border-bottom:2px solid #374151;
+    color:#111827 !important;
+  }
+  @page { margin:1.5cm; }
+}
+/* ── Legacy tab ───────────────────────────────────────────────────────────── */
+.legacy-header{padding:20px 0 16px;border-bottom:1px solid var(--border);margin-bottom:24px;display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+.legacy-header h2{font-size:20px;font-weight:700;margin:0}
+.legacy-header p{font-size:12px;color:var(--muted);margin:0}
+.legacy-export-btn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.legacy-export-btn:hover{border-color:var(--blue);color:var(--blue)}
+.legacy-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.legacy-grid{grid-template-columns:1fr}}
+.legacy-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.legacy-section-full{grid-column:1/-1}
+.legacy-section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:11px 16px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.legacy-fields{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.legacy-field{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:4px}
+.legacy-field:nth-last-child(-n+2){border-bottom:none}
+.legacy-field-wide{grid-column:1/-1}
+.legacy-field label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.legacy-input{background:transparent;border:none;color:var(--text);font-size:13px;font-family:inherit;width:100%;outline:none;padding:0}
+.legacy-input::placeholder{color:var(--border)}
+.legacy-input:focus{color:var(--text)}
+.legacy-textarea{resize:vertical;min-height:60px;line-height:1.5}
+.legacy-saved{font-size:10px;color:var(--green);opacity:0;transition:opacity .3s}
+.legacy-saved.show{opacity:1}
+/* Dynamic list rows */
+.ldy-add-btn{font-size:11px;font-weight:600;color:var(--blue);background:none;border:1px solid var(--blue);border-radius:5px;padding:3px 10px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.ldy-add-btn:hover{background:var(--blue-dim)}
+.ldy-list-header{display:grid;gap:0 12px;padding:6px 14px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.ldy-row{display:grid;gap:0 12px;padding:7px 14px;border-bottom:1px solid var(--border);align-items:center}
+.ldy-row:last-child{border-bottom:none}
+.ldy-row input{background:transparent;border:none;color:var(--text);font-size:13px;font-family:inherit;width:100%;outline:none;padding:2px 0}
+.ldy-row input::placeholder{color:var(--border)}
+.ldy-del-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:0;text-align:center;transition:color .15s}
+.ldy-del-btn:hover{color:var(--red)}
+.ldy-contacts-grid{grid-template-columns:1.2fr 1.2fr 1fr 1fr 1.4fr 24px}
+.ldy-accounts-grid{grid-template-columns:1fr 1.4fr 1.2fr 1.4fr 24px}
+.ldy-insurance-grid{grid-template-columns:1fr 1.4fr 1.2fr 1.4fr 24px}
+.ldy-empty{padding:14px 16px;font-size:12px;color:var(--muted);font-style:italic}
+@media print{
+  .ldy-add-btn,.ldy-del-btn{display:none!important}
+  .ldy-row input{color:#111827!important;border-bottom:1px dotted #d1d5db}
+  .ldy-list-header{background:#f3f4f6!important;color:#6b7280!important}
+}
+@media print{
+  .legacy-header p,.legacy-export-btn{display:none!important}
+  .legacy-section{border:1px solid #d1d5db!important;break-inside:avoid;margin-bottom:12px}
+  .legacy-section-title{background:#f3f4f6!important;color:#374151!important;font-size:10px!important}
+  .legacy-input{color:#111827!important;border-bottom:1px dotted #d1d5db}
+  .legacy-field{padding:6px 12px!important}
+  .legacy-field label{color:#6b7280!important}
+}
+/* ── Budget tab ───────────────────────────────────────────────────────────── */
+:root { --housing:#14b8a6; --subs:#a855f7; }
+#tab-budget .bgt-stats{display:flex;gap:12px;padding:16px 0;flex-wrap:wrap}
+#tab-budget .bgt-section-header{display:flex;align-items:center;gap:12px;margin:24px 0 10px;padding-bottom:10px;border-bottom:2px solid var(--border)}
+#tab-budget .bgt-section-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px}
+#tab-budget .bgt-section-total{margin-left:auto;font-size:13px;color:var(--muted)}
+#tab-budget .bgt-section-total b{font-size:18px;font-weight:700}
+#tab-budget .bgt-empty{color:var(--muted);padding:24px 12px;font-size:13px}
+.bgt-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center}
+.bgt-overlay.open{display:flex}
+.bgt-modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
+.bgt-modal h2{font-size:16px;font-weight:700;margin-bottom:18px}
+.bgt-form-group{margin-bottom:14px}
+.bgt-form-group label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.bgt-form-group input,.bgt-form-group select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:8px 10px;font-size:13px;font-family:inherit}
+.bgt-form-group input:focus,.bgt-form-group select:focus{outline:none;border-color:var(--blue)}
+.bgt-form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.bgt-form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.bgt-modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.bgt-type-toggle{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:18px}
+.bgt-type-btn{flex:1;padding:8px;font-size:13px;font-weight:600;border:none;cursor:pointer;background:transparent;color:var(--muted);transition:all .15s}
+.bgt-type-btn.active-housing{background:rgba(20,184,166,.2);color:var(--housing)}
+.bgt-type-btn.active-subscription{background:rgba(168,85,247,.2);color:var(--subs)}
+.bgt-type-btn.active-loan{background:rgba(239,68,68,.2);color:var(--red)}
+#bgt-loan-fields{display:none}
+.bgt-loan-balance{font-size:11px;color:var(--muted);margin-top:2px}
+.bgt-loan-chip{display:inline-flex;gap:4px;align-items:center;font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;background:rgba(239,68,68,.12);color:var(--red)}
+.bgt-toggle{appearance:none;width:36px;height:20px;background:var(--border);border-radius:10px;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.bgt-toggle:checked{background:var(--green)}
+.bgt-toggle::after{content:'';position:absolute;top:3px;left:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:left .2s}
+.bgt-toggle:checked::after{left:19px}
+.bgt-btn{padding:7px 14px;border-radius:7px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.bgt-btn:hover{opacity:.85}
+.bgt-btn-housing{background:var(--housing);color:#000}
+.bgt-btn-sm{padding:4px 10px;font-size:12px;border-radius:5px;border:none;cursor:pointer;font-weight:600}
+.bgt-btn-edit{background:rgba(59,130,246,.2);color:var(--blue)}
+.bgt-btn-del{background:rgba(239,68,68,.15);color:var(--red)}
+.bgt-btn-move{background:rgba(100,116,139,.15);color:var(--muted)}
+.bgt-btn-sm:hover{opacity:.8}
+.sub-table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px}
+.sub-table th{font-size:11px;color:var(--muted);text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.05em;background:var(--surface2)}
+.sub-table td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+.sub-table tr:last-child td{border-bottom:none}
+.sub-table tr:hover td{background:rgba(255,255,255,.02)}
+.sub-table tr.inactive td{opacity:.4}
+.bgt-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.bgt-badge-soon{background:rgba(234,179,8,.15);color:var(--yellow)}
+.bgt-badge-due{background:rgba(239,68,68,.15);color:var(--red)}
+.bgt-badge-ok{background:rgba(34,197,94,.15);color:var(--green)}
+.cat-badge{display:inline-flex;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px}
+</style>
+
+<style>
+.section { display: block !important; }
+.page-header { background:var(--surface); border-bottom:1px solid var(--border); padding:14px 24px; }
+.page-header h1 { font-size:18px; font-weight:700; }
+.page-header p { font-size:12px; color:var(--muted); margin-top:3px; }
+main { padding:20px 24px; max-width:1300px; margin:0 auto; }
+
+.tip{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:10px;font-weight:700;cursor:help;position:relative;margin-left:5px;vertical-align:middle;flex-shrink:0}
+.tip:hover{border-color:var(--blue);color:var(--blue)}
+.tip .tip-text{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:#1c2128;border:1px solid var(--border);border-radius:7px;padding:8px 11px;font-size:11px;font-weight:400;color:var(--text);width:220px;line-height:1.5;white-space:normal;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.tip:hover .tip-text{display:block}
+.tip .tip-text::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#1c2128}
+.disclaimer{background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:8px 14px;font-size:11px;color:#f85149;font-weight:600;letter-spacing:.03em;margin-top:8px;display:inline-block}
+</style>
+</head>
+<body>
+<div class="page-header">
+  <h1>Retirement Calculator</h1>
+  <p>Enter your balances and assumptions &mdash; all math runs in your browser, nothing sent to any server.</p>
+  <div class="disclaimer">&#9888; Not financial advice &mdash; for educational and planning purposes only. Consult a licensed financial advisor before making investment decisions.</div>
+</div>
+<main>
+
+  <div id="portfolio-card" class="proj-card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 style="font-size:15px;font-weight:700;margin:0">Current Portfolio Balances</h3>
+      <button onclick="renderRetire()" style="background:var(--blue);color:#fff;border:none;border-radius:6px;padding:7px 18px;font-size:13px;font-weight:600;cursor:pointer">&#9654; Calculate</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:10px">
+      <div>
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">IRA (Pre-tax)</label>
+        <input type="number" id="bal-ira" value="0" min="0" step="1000"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:14px"
+          oninput="_updateBalTotal()">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">401K / 403b</label>
+        <input type="number" id="bal-401k" value="0" min="0" step="1000"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:14px"
+          oninput="_updateBalTotal()">
+      </div>
+      <div>
+        <label style="font-size:11px;color:#7ec8e3;display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Roth IRA</label>
+        <input type="number" id="bal-roth" value="0" min="0" step="1000"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:14px"
+          oninput="_updateBalTotal()">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--green);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">HSA</label>
+        <input type="number" id="bal-hsa" value="0" min="0" step="1000"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:14px"
+          oninput="_updateBalTotal()">
+      </div>
+      <div>
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Taxable / Brokerage</label>
+        <input type="number" id="bal-taxable" value="0" min="0" step="1000"
+          style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);padding:6px 10px;font-size:14px"
+          oninput="_updateBalTotal()">
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:flex-end">
+        <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em">Total</label>
+        <div style="padding:6px 10px;font-size:16px;font-weight:700;color:var(--blue)" id="bal-total">$0</div>
+      </div>
+    </div>
+    <p style="font-size:11px;color:var(--muted)">Enter balances above, fill in your assumptions below, then click <strong>Calculate</strong>. Inputs are saved in your browser &mdash; nothing sent to any server.</p>
+  </div>
+
+<div id="tab-retire" class="section">
+<div class="section" id="tab-retire">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+    <span style="font-size:11px;color:var(--muted);margin-right:6px">blurs sensitive values</span><button id="retire-blur-btn" class="retire-blur-btn" onclick="toggleRetireValues()" title="Blur all dollar amounts — useful for screen sharing">🔒 Private</button>
+  </div>
+  <div class="proj-row proj-row-4">
+    <div class="proj-stat"><div class="proj-stat-label">At Retirement Age</div><div class="proj-stat-val" id="ret-at-age" style="color:var(--green)">—</div><div class="proj-stat-sub" id="ret-at-age-sub">projected balance</div></div>
+    <div class="proj-stat"><div class="proj-stat-label">Years to Freedom # <span class="tip">?<span class="tip-text">Freedom Number = 25x your annual expenses. At that portfolio size the 4% safe withdrawal rate covers costs indefinitely — you are financially independent.</span></span></div><div class="proj-stat-val" id="ret-freedom-years" style="color:var(--purple)">—</div><div class="proj-stat-sub" id="ret-freedom-sub">25× expenses (4% rule)</div></div>
+    <div class="proj-stat"><div class="proj-stat-label">Monthly Income (4%)</div><div class="proj-stat-val" id="ret-monthly-income" style="color:var(--blue)">—</div><div class="proj-stat-sub">from retirement balance</div></div>
+    <div class="proj-stat"><div class="proj-stat-label">Countdown</div><div class="proj-stat-val" id="ret-countdown" style="color:var(--orange)">—</div><div class="proj-stat-sub" id="ret-countdown-sub">days to retirement</div></div>
+  </div>
+
+  <div class="proj-card">
+    <h3>Assumptions</h3>
+    <div class="retire-input-grid">
+      <div>
+        <div class="slider-row">
+          <label>Your birthday</label>
+          <input type="date" id="ret-birthdate-self" value="1971-06-15"
+            style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:13px;width:160px"
+            oninput="syncAgeFromBirth();renderRetire()">
+          <span id="ret-age-display" style="font-size:12px;color:var(--muted);min-width:60px">age —</span>
+        </div>
+        <input type="hidden" id="ret-age" value="54">
+        <input type="hidden" id="ret-age-val" value="54">
+        <div class="slider-row">
+          <label>Retirement date</label>
+          <span style="display:inline-flex;align-items:center;gap:4px;flex-shrink:0">
+            <input type="number" id="ret-retire-date" value="2034" min="2024" max="2075" step="1"
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:13px;width:74px;text-align:center"
+              oninput="syncRetireAge();renderRetire()">
+            <select id="ret-retire-month"
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 5px;font-size:13px"
+              onchange="renderCountdown();saveRetireInputs()"><option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option><option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option><option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option><option value="10">Oct</option><option value="11">Nov</option><option value="12" selected>Dec</option></select>
+            <input type="number" id="ret-retire-day" value="2" min="1" max="31" step="1"
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 6px;font-size:13px;width:50px;text-align:center"
+              oninput="renderCountdown();saveRetireInputs()">
+          </span>
+          <span id="ret-retage-display" style="font-size:12px;color:var(--muted);min-width:60px">age —</span>
+        </div>
+        <input type="hidden" id="ret-retage" value="62">
+        <input type="hidden" id="ret-retage-val" value="62">
+        <input type="hidden" id="ret-retire-year" value="2034">
+        <div class="slider-row">
+          <label>Annual expenses</label>
+          <input type="range" id="ret-expenses" min="20000" max="200000" step="1000" value="80000" oninput="renderRetire()">
+          <input type="number" id="ret-expenses-val" min="0" max="9999999" step="1000" value="80000" oninput="el('ret-expenses').value=this.value;renderRetire()">
+        </div>
+      </div>
+      <div>
+        <div class="slider-row">
+          <label>Monthly contribution <span class="tip">?<span class="tip-text">Extra money added to your portfolio each month during accumulation, on top of any employer plan contributions.</span></span></label>
+          <input type="range" id="ret-contrib" min="0" max="5000" step="100" value="1500" oninput="renderRetire()">
+          <input type="number" id="ret-contrib-val" min="0" max="99999" step="100" value="1500" oninput="el('ret-contrib').value=this.value;renderRetire()">
+        </div>
+        <div class="slider-row">
+          <label>Expected return % <span class="tip">?<span class="tip-text">Average annual investment return. The S&P 500 has averaged ~10% historically; 6-7% is common after inflation. Higher = more optimistic projection.</span></span></label>
+          <input type="range" id="ret-rate" min="0" max="12" step="0.5" value="7" oninput="renderRetire()">
+          <input type="number" id="ret-rate-val" min="0" max="20" step="0.5" value="7" oninput="el('ret-rate').value=this.value;renderRetire()">
+        </div>
+        <div class="slider-row" title="Annual standard deviation of returns. S&P 500 historical ≈ 15-18%. Lower = bonds-heavy, higher = volatile stocks.">
+          <label>Volatility % <span class="tip">?<span class="tip-text">Standard deviation of annual returns — how bumpy the ride is. S&P 500 is ~15-18%. Higher volatility increases sequence-of-returns risk early in retirement.</span></span></label>
+          <input type="range" id="ret-vol" min="0" max="25" step="1" value="15" oninput="renderRetire()">
+          <input type="number" id="ret-vol-val" min="0" max="30" step="1" value="15" oninput="el('ret-vol').value=this.value;renderRetire()">
+        </div>
+        <div class="slider-row">
+          <label>Starting balance</label>
+          <span style="grid-column:span 2;font-size:13px"><b id="ret-start-bal">—</b> <span class="proj-sub" id="ret-start-source"></span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Social Security — opt-in, deducts from monthly withdrawal once started -->
+    <div style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
+      <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;cursor:pointer">
+        <input type="checkbox" id="ret-ssi-on" checked onchange="toggleSsi();renderRetire()"> 🏛️ Include Social Security
+      </label>
+      <div id="ret-ssi-fields" style="display:none;margin-top:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Jeff</div>
+            <div class="slider-row" title="Your estimated benefit at Full Retirement Age (from ssa.gov/myaccount)">
+              <label>FRA benefit / mo <span class="tip">?<span class="tip-text">Your Full Retirement Age (FRA) benefit from ssa.gov/myaccount — the monthly amount if you claim exactly at FRA. Claiming early reduces it; delaying past FRA increases it up to age 70.</span></span></label>
+              <input type="range" id="ret-ssi-self" min="0" max="5000" step="50" value="2500" oninput="updateSsiCalc();renderRetire()">
+              <input type="number" id="ret-ssi-self-val" min="0" max="99999" step="50" value="2500" oninput="el('ret-ssi-self').value=this.value;updateSsiCalc();renderRetire()">
+            </div>
+            <div class="slider-row" title="Age at which Jeff claims Social Security (62–70, half-year steps)">
+              <label>Claim age</label>
+              <select id="ret-ssi-self-claimage" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:13px;width:90px" onchange="updateSsiCalc();renderRetire()"></select>
+              <span id="ret-ssi-self-calc" style="font-size:11px;color:var(--green);min-width:90px;text-align:right"></span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Spouse</div>
+            <div class="slider-row" title="Spouse birthday — used to calculate FRA and map claim age to projection year">
+              <label>Spouse birthday</label>
+              <input type="date" id="ret-birthdate-spouse" value="1973-01-01"
+                style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:13px;width:150px"
+                oninput="updateSsiCalc();renderRetire()">
+              <span id="ret-ssi-spouse-age-display" style="font-size:12px;color:var(--muted);min-width:50px"></span>
+            </div>
+            <div class="slider-row" title="Spouse estimated benefit at Full Retirement Age">
+              <label>FRA benefit / mo <span class="tip">?<span class="tip-text">Your Full Retirement Age (FRA) benefit from ssa.gov/myaccount — the monthly amount if you claim exactly at FRA. Claiming early reduces it; delaying past FRA increases it up to age 70.</span></span></label>
+              <input type="range" id="ret-ssi-spouse" min="0" max="5000" step="50" value="2000" oninput="updateSsiCalc();renderRetire()">
+              <input type="number" id="ret-ssi-spouse-val" min="0" max="99999" step="50" value="2000" oninput="el('ret-ssi-spouse').value=this.value;updateSsiCalc();renderRetire()">
+            </div>
+            <div class="slider-row" title="Age at which spouse claims Social Security (62–70, half-year steps)">
+              <label>Claim age</label>
+              <select id="ret-ssi-spouse-claimage" style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:13px;width:90px" onchange="updateSsiCalc();renderRetire()"></select>
+              <span id="ret-ssi-spouse-calc" style="font-size:11px;color:var(--green);min-width:90px;text-align:right"></span>
+            </div>
+            <input type="hidden" id="ret-ssi-spouse-now" value="53">
+            <input type="hidden" id="ret-ssi-spouse-now-val" value="53">
+          </div>
+        </div>
+        <div class="proj-sub" style="margin-top:8px">
+          Enter your FRA benefit from <a href="https://www.ssa.gov/myaccount/" target="_blank">ssa.gov/myaccount</a>. Actual benefit is calculated based on claim age vs your Full Retirement Age.
+        </div>
+      </div>
+    </div>
+
+    <!-- Additional investments with stop year -->
+    <div style="margin-top:8px;padding-top:12px;border-top:1px solid var(--border)">
+      <label style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;cursor:pointer">
+        <input type="checkbox" id="ret-extra-on" checked onchange="toggleExtraContrib();renderRetire()"> 💰 Additional Annual Investments
+      </label>
+      <div id="ret-extra-fields" style="display:none;margin-top:10px">
+        <div class="slider-row" title="Extra annual investment on top of your monthly contribution (e.g. bonus, RSU, side income)">
+          <label>Extra / year <span class="tip">?<span class="tip-text">Additional annual lump-sum investments (bonus, side income, etc.) added on top of your monthly contribution.</span></span></label>
+          <input type="range" id="ret-extra-amt" min="0" max="100000" step="1000" value="12000" oninput="renderRetire()">
+          <input type="number" id="ret-extra-amt-val" min="0" max="9999999" step="1000" value="12000" oninput="el('ret-extra-amt').value=this.value;renderRetire()">
+        </div>
+        <div class="slider-row" title="Year you expect to stop making these extra investments">
+          <label>Stop investing year <span class="tip">?<span class="tip-text">The calendar year you plan to stop extra annual investments — often the year you retire or that income source ends.</span></span></label>
+          <input type="number" id="ret-extra-stop-year" min="2026" max="2060" value="2032" style="width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 6px;font-size:13px" oninput="renderRetire()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="proj-card">
+    <h3>Projected Growth</h3>
+    <div class="retire-chart-wrap"><canvas id="ret-chart"></canvas></div>
+    <div class="retire-explain" id="ret-explain"></div>
+  </div>
+
+  <div class="proj-card">
+    <h3>🎲 Monte Carlo Simulation
+      <span class="proj-sub" id="mc-meta" style="margin-left:8px;font-weight:400"></span>
+    </h3>
+    <div class="proj-row">
+      <div class="proj-stat">
+        <div class="proj-stat-label">Success Rate</div>
+        <div class="proj-stat-val" id="mc-success" style="color:var(--green)">—</div>
+        <div class="proj-stat-sub" id="mc-success-sub">% of runs that survive 30 yrs of retirement</div>
+      </div>
+      <div class="proj-stat">
+        <div class="proj-stat-label">Bad Case (10th %ile)</div>
+        <div class="proj-stat-val" id="mc-p10" style="color:var(--red)">—</div>
+        <div class="proj-stat-sub">balance at retirement, unlucky path</div>
+      </div>
+      <div class="proj-stat">
+        <div class="proj-stat-label">Good Case (90th %ile)</div>
+        <div class="proj-stat-val" id="mc-p90" style="color:var(--blue)">—</div>
+        <div class="proj-stat-sub">balance at retirement, lucky path</div>
+      </div>
+    </div>
+    <div class="retire-chart-wrap" style="height:320px"><canvas id="mc-chart"></canvas></div>
+    <div class="retire-explain" id="mc-explain"></div>
+  </div>
+
+  <div class="proj-card">
+    <h3>📉 Drawdown Projection
+      <span class="proj-sub" style="margin-left:8px;font-weight:400;font-size:11px">year-by-year from retirement · RMD at 75 · IRMAA estimate</span>
+    </h3>
+    <!-- Scenario selector -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+      <button id="dd-btn-bear" class="dd-scenario-btn dd-active" onclick="setDdScenario('bear')">🐻 Bear <span id="dd-rate-bear" class="proj-sub"></span></button>
+      <button id="dd-btn-base" class="dd-scenario-btn" onclick="setDdScenario('base')">📊 Base <span id="dd-rate-base" class="proj-sub"></span></button>
+      <button id="dd-btn-bull" class="dd-scenario-btn" onclick="setDdScenario('bull')">🐂 Bull <span id="dd-rate-bull" class="proj-sub"></span></button>
+      <span id="dd-scenario-label" class="proj-sub" style="margin-left:4px"></span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="dd-table">
+        <thead>
+          <tr>
+            <th rowspan="2" style="vertical-align:bottom">Year</th>
+            <th rowspan="2" style="vertical-align:bottom">Age</th>
+            <th colspan="4" style="text-align:center;border-bottom:1px solid var(--border);padding-bottom:2px;font-size:10px;letter-spacing:.04em">START BALANCE</th>
+            <th rowspan="2" style="vertical-align:bottom">Gain</th>
+            <th rowspan="2" style="vertical-align:bottom">SS Inc</th>
+            <th rowspan="2" style="vertical-align:bottom">Net Need</th>
+            <th rowspan="2" style="vertical-align:bottom">Med Est<br><span style="font-size:9px;font-weight:400;color:var(--muted)">(Medicare+gap)</span></th>
+            <th rowspan="2" style="vertical-align:bottom">RMD Req<br><span style="font-size:9px;font-weight:400;color:var(--muted)">(pretax only)</span></th>
+            <th colspan="3" style="text-align:center;border-bottom:1px solid var(--border);padding-bottom:2px;font-size:10px;letter-spacing:.04em">DRAW SOURCE</th>
+            <th rowspan="2" style="vertical-align:bottom">MAGI</th>
+            <th rowspan="2" style="vertical-align:bottom">IRMAA (MFJ)</th>
+            <th rowspan="2" style="vertical-align:bottom">Tot End</th>
+          </tr>
+          <tr>
+            <th>IRA</th>
+            <th>401K</th>
+            <th style="color:#7ec8e3">Roth</th>
+            <th style="color:var(--green)">HSA</th>
+            <th>Pretax</th>
+            <th style="color:#7ec8e3">Roth</th>
+            <th style="color:var(--green)">HSA (med)</th>
+          </tr>
+        </thead>
+        <tbody id="drawdown-table-body"></tbody>
+      </table>
+    </div>
+    <div class="retire-explain" id="dd-explain" style="margin-top:10px"></div>
+    <div style="font-size:10px;color:var(--muted);margin-top:6px;line-height:1.5">
+      RMD uses IRS Uniform Lifetime Table (SECURE 2.0: age 75 for born 1960+). RMD applies to IRA + 401K only — Roth and HSA are exempt. Draw order: IRA → 401K → Roth (Roth preserved longest). Medicare costs (~,500/yr in 2026, +5%/yr) drawn from HSA first (tax-free); uncovered medical falls into pretax draw. MAGI = pretax draws + 85% SS — Roth and HSA draws excluded. Orange rows = RMD years. ⚠ = RMD exceeds spending need.
+    </div>
+
+  <div class="proj-card" id="roth-planner-card">
+    <h3 style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:8px" onclick="toggleRothPlanner()">
+      💸 Roth Conversion Planner
+      <span class="proj-sub" style="font-weight:400;font-size:11px;flex:1">gap-year bracket filling · lower future RMDs · tax-free growth</span>
+      <span id="roth-chevron" style="font-size:13px;color:var(--muted)">▼</span>
+    </h3>
+    <div id="roth-body">
+      <!-- Controls -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+        <div>
+          <div class="slider-row">
+            <label title="Pre-tax (traditional IRA / 401k) balance projected to conversion start year">Trad. IRA / 401k bal.</label>
+            <span><b id="roth-trad-bal-display" style="font-size:13px;font-variant-numeric:tabular-nums">—</b>
+              <span id="roth-trad-bal-src" class="proj-sub" style="font-size:11px;margin-left:6px"></span></span>
+          </div>
+          <div class="slider-row">
+            <label title="Roth IRA balance projected to conversion start year">Existing Roth bal.</label>
+            <span><b id="roth-roth-bal-display" style="font-size:13px;color:var(--green);font-variant-numeric:tabular-nums">—</b>
+              <span id="roth-roth-bal-src" class="proj-sub" style="font-size:11px;margin-left:6px"></span></span>
+          </div>
+          <div class="slider-row">
+            <label>Conversion window</label>
+            <span style="display:flex;gap:6px;align-items:center;font-size:13px">
+              <input type="number" id="roth-from-year" value="2035" min="2024" max="2060"
+                style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 6px;font-size:13px;width:68px;text-align:center"
+                oninput="renderRothPlanner()">
+              <span style="color:var(--muted)">to</span>
+              <input type="number" id="roth-to-year" value="2040" min="2024" max="2060"
+                style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 6px;font-size:13px;width:68px;text-align:center"
+                oninput="renderRothPlanner()">
+            </span>
+          </div>
+          <div class="slider-row">
+            <label title="Other taxable income during gap years (part-time, dividends, pensions)">Other income / yr</label>
+            <input type="number" id="roth-other-inc" value="0" min="0" step="1000"
+              style="background:var(--surface2);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:3px 8px;font-size:13px;width:130px;font-variant-numeric:tabular-nums"
+              oninput="renderRothPlanner()">
+          </div>
+        </div>
+        <div>
+          <div class="slider-row" style="margin-bottom:12px">
+            <label title="Fill up to this bracket with conversions each year">Target bracket</label>
+            <span style="display:flex;gap:6px">
+              <button id="roth-btn-10" class="roth-btn" onclick="setRothBracket(10)">10%</button>
+              <button id="roth-btn-12" class="roth-btn roth-active" onclick="setRothBracket(12)">12%</button>
+              <button id="roth-btn-22" class="roth-btn" onclick="setRothBracket(22)">22%</button>
+            </span>
+            <input type="hidden" id="roth-bracket" value="12">
+          </div>
+          <div class="slider-row">
+            <label>Market return %</label>
+            <span style="font-size:13px;color:var(--muted)">reads from <b style="color:var(--text)" id="roth-rate-display">—</b> (Assumptions)</span>
+          </div>
+          <div class="slider-row">
+            <label>Expenses / yr</label>
+            <span style="font-size:13px;color:var(--muted)">reads from <b style="color:var(--text)" id="roth-exp-display">—</b> (Assumptions)</span>
+          </div>
+          <div class="slider-row">
+            <label>Bracket inflation</label>
+            <span style="font-size:12px;color:var(--muted)">3% / yr (IRS historical avg)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Summary stats -->
+      <div class="proj-row proj-row-4" style="margin-bottom:14px">
+        <div class="proj-stat">
+          <div class="proj-stat-label">Total Converted</div>
+          <div class="proj-stat-val" id="roth-total-conv-val" style="color:var(--green)">—</div>
+          <div class="proj-stat-sub" id="roth-total-conv-sub">across all gap years</div>
+        </div>
+        <div class="proj-stat">
+          <div class="proj-stat-label">Total Tax Cost</div>
+          <div class="proj-stat-val" id="roth-total-tax-val" style="color:var(--orange)">—</div>
+          <div class="proj-stat-sub" id="roth-total-tax-sub">federal marginal only</div>
+        </div>
+        <div class="proj-stat">
+          <div class="proj-stat-label">Avg Effective Rate</div>
+          <div class="proj-stat-val" id="roth-avg-rate-val" style="color:var(--blue)">—</div>
+          <div class="proj-stat-sub">on converted amount</div>
+        </div>
+        <div class="proj-stat">
+          <div class="proj-stat-label">Roth at Age 75</div>
+          <div class="proj-stat-val" id="roth-at-rmd-val" style="color:var(--purple)">—</div>
+          <div class="proj-stat-sub" id="roth-at-rmd-sub">projected (no RMD)</div>
+        </div>
+      </div>
+
+      <!-- Year-by-year table -->
+      <div style="overflow-x:auto">
+        <table class="roth-tbl">
+          <thead>
+            <tr>
+              <th style="text-align:left">Year</th>
+              <th>Age</th>
+              <th>Std Deduct</th>
+              <th>Other Inc</th>
+              <th>Expense Draw</th>
+              <th style="color:var(--blue)">Bracket Room</th>
+              <th style="color:var(--green)">Roth Conv.</th>
+              <th style="color:var(--orange)">Tax Cost</th>
+              <th>Eff Rate</th>
+              <th>IRA Bal</th>
+              <th>401K Bal</th>
+              <th style="color:var(--teal,#2bbbad)">HSA Bal</th>
+              <th style="color:var(--green)">Roth Bal</th>
+              <th>Excess</th>
+              <th style="color:var(--purple)">Taxable Bal</th>
+            </tr>
+          </thead>
+          <tbody id="roth-table-body"></tbody>
+        </table>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:8px;line-height:1.6">
+        Brackets are 2025 MFJ inflated 3%/yr · Std deduction $29,200 (2025) inflated · Tax cost = marginal federal tax on conversion only — state taxes not included ·
+        Roth balance grows at assumed market return; taxes paid from expense budget · <strong>Excess</strong> = other income surplus above expenses, invested in taxable account ·
+        All figures nominal dollars.
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+</div>
+</main>
+<script>
+function el(id) { return document.getElementById(id); }
+let _charts = {};
+const fmt  = v => v==null?'—':'$'+Math.abs(v).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+const fmtK = v => v==null?'—':(v>=1e6?'$'+(v/1e6).toFixed(2)+'M':'$'+(v/1000).toFixed(1)+'K');
+const chgColor = v => v>0?'var(--green)':v<0?'var(--red)':'var(--muted)';
+function destroyChart(id) { if(_charts[id]){ _charts[id].destroy(); delete _charts[id]; } }
+Chart.defaults.color = '#8b949e';
+Chart.defaults.borderColor = '#30363d';
+Chart.defaults.font.family = '-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif';
+Chart.defaults.font.size = 11;
+function lineOpts(prefix='', showZero=false) {
+  return {
+    responsive:true, maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{position:'top', labels:{boxWidth:10,usePointStyle:true}},
+      tooltip:{callbacks:{label: ctx => `${ctx.dataset.label}: $${Math.round(ctx.parsed.y).toLocaleString()}`}}},
+    scales:{
+      x:{grid:{color:'#21262d'}, ticks:{maxTicksLimit:10, maxRotation:0}},
+      y:{grid:{color:'#21262d'}, ticks:{callback: v => '$'+(Math.abs(v)>=1e6?(v/1e6).toFixed(1)+'M':(v/1000).toFixed(0)+'K')},
+         beginAtZero:showZero}
+    }
+  };
+}
+
+
+function getLiveBuckets() {
+  const _p = id => Math.max(0, parseFloat((el(id)?.value||'').replace(/[^0-9.]/g,''))||0);
+  const ira=_p('bal-ira'), k401=_p('bal-401k'), roth=_p('bal-roth'), hsa=_p('bal-hsa'), taxable=_p('bal-taxable');
+  return {pretax:ira+k401, pretaxIra:ira, pretax401k:k401, roth, taxable, hsa};
+}
+
+
+const DATA = null;
+function allMonths(){return [];}
+function getMonthData(){return {};}
+function getLiveTotals(){return {hasAny:false,investLive:null};}
+
+function projectRetirement(startBal, monthlyContrib, annualRate, accumYears,
+                           withdrawYears = 0, curAge = 0,
+                           annualExpenses = 0, ssi = [],
+                           extraMonthly = 0, extraStopYears = 0) {
+  const r = annualRate / 100 / 12;
+  const monthlyExpenses = annualExpenses / 12;
+  const totalYears = accumYears + withdrawYears;
+  const points = [{year: 0, balance: startBal}];
+  let bal = startBal;
+  let depleted = false;
+
+  for (let m = 1; m <= totalYears * 12; m++) {
+    bal *= (1 + r);
+    if (m <= accumYears * 12) {
+      const extra = (extraMonthly > 0 && m <= extraStopYears * 12) ? extraMonthly : 0;
+      bal += monthlyContrib + extra;
+    } else if (!depleted) {
+      const yearsFromNow = m / 12;
+      let monthlySsi = 0;
+      for (const s of ssi) {
+        const startYear = Math.max(0, s.startAge - s.currentAge);
+        if (yearsFromNow >= startYear) monthlySsi += (s.amount || 0) / 12;
+      }
+      const net = Math.max(0, monthlyExpenses - monthlySsi);
+      bal -= net;
+      if (bal < 0) { bal = 0; depleted = true; }
+    }
+    if (m % 12 === 0) points.push({year: m / 12, balance: bal});
+  }
+  return points;
+}
+
+function toggleSsi() {
+  const on = el('ret-ssi-on').checked;
+  el('ret-ssi-fields').style.display = on ? '' : 'none';
+}
+function toggleExtraContrib() {
+  const on = el('ret-extra-on').checked;
+  el('ret-extra-fields').style.display = on ? '' : 'none';
+}
+
+// Helper used by both deterministic + Monte Carlo: read current SSI inputs into
+// ── Social Security helpers ──────────────────────────────────────────────────
+function ageFromBirthdate(dateStr) {
+  if (!dateStr) return null;
+  const birth = new Date(dateStr);
+  if (isNaN(birth)) return null;
+  const now = new Date();
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) age--;
+  return age;
+}
+
+function ssFullRetirementAge(birthYear) {
+  if (birthYear <= 1937) return 65;
+  if (birthYear === 1938) return 65 + 2/12;
+  if (birthYear === 1939) return 65 + 4/12;
+  if (birthYear === 1940) return 65 + 6/12;
+  if (birthYear === 1941) return 65 + 8/12;
+  if (birthYear === 1942) return 65 + 10/12;
+  if (birthYear <= 1954) return 66;
+  if (birthYear === 1955) return 66 + 2/12;
+  if (birthYear === 1956) return 66 + 4/12;
+  if (birthYear === 1957) return 66 + 6/12;
+  if (birthYear === 1958) return 66 + 8/12;
+  if (birthYear === 1959) return 66 + 10/12;
+  return 67; // 1960+
+}
+
+function ssBenefitFactor(claimAge, fra) {
+  const monthsEarly = Math.round((fra - claimAge) * 12);
+  if (monthsEarly <= 0) {
+    // Delayed — 8% per year after FRA
+    const monthsLate = Math.round((claimAge - fra) * 12);
+    return 1 + (monthsLate * 2/3 / 100);
+  }
+  // Early reduction: 5/9% per month first 36, then 5/12%
+  const first36 = Math.min(monthsEarly, 36);
+  const beyond  = Math.max(monthsEarly - 36, 0);
+  return 1 - (first36 * 5/9 / 100) - (beyond * 5/12 / 100);
+}
+
+function buildClaimAgeSelect(selectId, birthYear) {
+  const sel = el(selectId);
+  if (!sel) return;
+  const fra = ssFullRetirementAge(birthYear || 1960);
+  const cur = parseFloat(sel.value) || fra;
+  sel.innerHTML = '';
+  for (let age = 62; age <= 70.01; age += 0.5) {
+    const opt = document.createElement('option');
+    opt.value = age.toFixed(1);
+    const label = Number.isInteger(age) ? age.toString()
+                  : Math.floor(age) + '½';
+    const factor = ssBenefitFactor(age, fra);
+    opt.textContent = label;
+    if (Math.abs(age - cur) < 0.01) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  // Default to FRA if nothing selected
+  if (!sel.value) sel.value = fra.toFixed(1);
+}
+
+function syncRetireAge() {
+  const retYear = parseInt(el('ret-retire-date')?.value);
+  const birthStr = el('ret-birthdate-self')?.value;
+  if (!retYear || !birthStr) return;
+  const age = retYear - new Date(birthStr).getFullYear();
+  el('ret-retage').value     = age;
+  el('ret-retage-val').value = age;
+  const disp = el('ret-retage-display');
+  if (disp) disp.textContent = 'age ' + age;
+}
+
+function syncAgeFromBirth() {
+  const dateStr = el('ret-birthdate-self')?.value;
+  const age = ageFromBirthdate(dateStr);
+  if (age != null) {
+    el('ret-age').value = age;
+    el('ret-age-val').value = age;
+    const disp = el('ret-age-display');
+    if (disp) disp.textContent = 'age ' + age;
+    // Rebuild claim age select with correct FRA
+    const birthYear = dateStr ? new Date(dateStr).getFullYear() : 1960;
+    buildClaimAgeSelect('ret-ssi-self-claimage', birthYear);
+  }
+}
+
+function updateSsiCalc() {
+  // Jeff
+  const selfBirth = el('ret-birthdate-self')?.value;
+  const selfBY    = selfBirth ? new Date(selfBirth).getFullYear() : 1971;
+  const selfFra   = ssFullRetirementAge(selfBY);
+  const selfClaim = parseFloat(el('ret-ssi-self-claimage')?.value) || selfFra;
+  const selfFraMo = +el('ret-ssi-self').value || 0;
+  const selfActual = Math.round(selfFraMo * ssBenefitFactor(selfClaim, selfFra));
+  const selfCalcEl = el('ret-ssi-self-calc');
+  if (selfCalcEl) selfCalcEl.textContent = selfActual > 0 ? '→ $' + selfActual.toLocaleString() + '/mo' : '';
+
+  // Spouse
+  const spBirth = el('ret-birthdate-spouse')?.value;
+  const spBY    = spBirth ? new Date(spBirth).getFullYear() : 1973;
+  const spFra   = ssFullRetirementAge(spBY);
+  const spAge   = ageFromBirthdate(spBirth);
+  if (spAge != null) {
+    el('ret-ssi-spouse-now').value = spAge;
+    el('ret-ssi-spouse-now-val').value = spAge;
+    const spAgeEl = el('ret-ssi-spouse-age-display');
+    if (spAgeEl) spAgeEl.textContent = 'age ' + spAge;
+    buildClaimAgeSelect('ret-ssi-spouse-claimage', spBY);
+  }
+  const spClaim  = parseFloat(el('ret-ssi-spouse-claimage')?.value) || spFra;
+  const spFraMo  = +el('ret-ssi-spouse').value || 0;
+  const spActual = Math.round(spFraMo * ssBenefitFactor(spClaim, spFra));
+  const spCalcEl = el('ret-ssi-spouse-calc');
+  if (spCalcEl) spCalcEl.textContent = spActual > 0 ? '→ $' + spActual.toLocaleString() + '/mo' : '';
+}
+
+// the [{amount, startAge, currentAge}, …] shape both simulators expect.
+function getSsiInputs(curAge) {
+  if (!el('ret-ssi-on')?.checked) return [];
+  const out = [];
+
+  // Jeff
+  const selfBirth  = el('ret-birthdate-self')?.value;
+  const selfBY     = selfBirth ? new Date(selfBirth).getFullYear() : 1971;
+  const selfFra    = ssFullRetirementAge(selfBY);
+  const selfClaim  = parseFloat(el('ret-ssi-self-claimage')?.value) || selfFra;
+  const selfFraMo  = +el('ret-ssi-self').value || 0;
+  const selfActual = Math.round(selfFraMo * ssBenefitFactor(selfClaim, selfFra));
+  if (selfActual > 0) {
+    out.push({amount: selfActual * 12, startAge: selfClaim, currentAge: curAge});
+  }
+
+  // Spouse
+  const spBirth  = el('ret-birthdate-spouse')?.value;
+  const spBY     = spBirth ? new Date(spBirth).getFullYear() : 1973;
+  const spFra    = ssFullRetirementAge(spBY);
+  const spAge    = ageFromBirthdate(spBirth) || +el('ret-ssi-spouse-now').value || 53;
+  const spClaim  = parseFloat(el('ret-ssi-spouse-claimage')?.value) || spFra;
+  const spFraMo  = +el('ret-ssi-spouse').value || 0;
+  const spActual = Math.round(spFraMo * ssBenefitFactor(spClaim, spFra));
+  if (spActual > 0) {
+    out.push({amount: spActual * 12, startAge: spClaim, currentAge: spAge});
+  }
+  return out;
+}
+
+// Read additional-investment inputs: returns {monthlyExtra, stopYears} or null.
+function getExtraContrib(curAge) {
+  if (!el('ret-extra-on')?.checked) return {monthlyExtra: 0, stopYears: 0};
+  const annual   = +el('ret-extra-amt').value || 0;
+  const stopYear = +el('ret-extra-stop-year').value || new Date().getFullYear();
+  const stopYears = Math.max(0, stopYear - new Date().getFullYear());
+  return {monthlyExtra: annual / 12, stopYears};
+}
+
+// On every render: sync the number inputs with sliders, recompute, redraw.
+// Persist Retire-tab inputs across page reloads via localStorage.
+// Restored exactly once per session — on the first call to renderRetire()
+// after page load — so the sliders show your saved values, not the HTML defaults.
+const RETIRE_LS_KEY = 'retire_calc_v1';
+const RETIRE_INPUT_IDS = ['ret-age','ret-retage','ret-expenses','ret-contrib','ret-rate','ret-vol',
+                          'ret-ssi-self','ret-ssi-self-claimage',
+                          'ret-ssi-spouse','ret-ssi-spouse-claimage',
+                          'ret-extra-amt','ret-extra-stop-year',
+                          'roth-from-year','roth-to-year',
+                          'roth-other-inc','roth-bracket',
+                          'bal-ira','bal-401k','bal-roth','bal-hsa','bal-taxable'];
+const RETIRE_DATE_IDS = ['ret-birthdate-self','ret-birthdate-spouse','ret-retire-date','ret-retire-month','ret-retire-day'];
+// Checkboxes (state stored as 'true'/'false' strings)
+const RETIRE_CHECKBOX_IDS = ['ret-ssi-on','ret-extra-on'];
+let _retireRestored = true;
+
+function restoreRetireInputs() {
+  try {
+    const raw = localStorage.getItem(RETIRE_LS_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    for (const id of RETIRE_INPUT_IDS) {
+      if (data[id] == null) continue;
+      const slider = el(id), num = el(id + '-val');
+      if (slider) slider.value = data[id];
+      if (num)    num.value    = data[id];
+    }
+    for (const id of RETIRE_CHECKBOX_IDS) {
+      if (data[id] == null) continue;
+      const cb = el(id);
+      if (cb) cb.checked = (data[id] === true || data[id] === 'true');
+    }
+    // Restore date inputs (ret-retire-date stored as year number; legacy format YYYY-MM-DD also handled)
+    for (const id of RETIRE_DATE_IDS) {
+      if (data[id] == null) continue;
+      const el2 = el(id);
+      if (!el2) continue;
+      if (id === 'ret-retire-date') {
+        const v = String(data[id]);
+        el2.value = v.length >= 4 ? parseInt(v.slice(0, 4)) : data[id];
+      } else {
+        el2.value = data[id];
+      }
+    }
+    // Reveal the gated SSI fields if their parents are on
+    toggleSsi(); toggleExtraContrib();
+    syncRetireAge(); syncAgeFromBirth(); updateSsiCalc();
+    // Restore Roth bracket button active state
+    const _rb = +(el('roth-bracket')?.value || 12);
+    [10,12,22].forEach(v => { const b = el('roth-btn-'+v); if(b) b.classList.toggle('roth-active', v===_rb); });
+  } catch (_) { /* corrupt LS — ignore, fall back to defaults */ }
+}
+
+function saveRetireInputs() {
+  try {
+    const data = {};
+    for (const id of RETIRE_INPUT_IDS) {
+      const v = el(id)?.value;
+      if (v != null) data[id] = v;
+    }
+    for (const id of RETIRE_DATE_IDS) {
+      const v = el(id)?.value; if (v != null) data[id] = v;
+    }
+    for (const id of RETIRE_CHECKBOX_IDS) {
+      const cb = el(id);
+      if (cb) data[id] = cb.checked;
+    }
+    localStorage.setItem(RETIRE_LS_KEY, JSON.stringify(data));
+  } catch (_) { /* private mode / quota — silently ignore */ }
+}
+
+
+// ── Retire values blur toggle ───────────────────────────────────────────────
+function toggleRetireValues() {
+  const tab = document.getElementById('tab-retire');
+  const pc  = document.getElementById('portfolio-card');
+  const btn = document.getElementById('retire-blur-btn');
+  const hiding = tab.classList.toggle('retire-hide-values');
+  if (pc) pc.classList.toggle('retire-hide-values', hiding);
+  if (btn) { btn.classList.toggle('showing', !hiding); btn.textContent = hiding ? '👁 Show' : '🔒 Private'; }
+  localStorage.setItem('retire-hide-values', hiding ? '1' : '0');
+}
+(function initRetireBlur() {
+  const show = localStorage.getItem('retire-hide-values') === '0';
+  if (!show) {
+    const tab = document.getElementById('tab-retire');
+    if (tab) tab.classList.add('retire-hide-values');
+    const pc = document.getElementById('portfolio-card');
+    if (pc) pc.classList.add('retire-hide-values');
+  } else {
+    const btn = document.getElementById('retire-blur-btn');
+    if (btn) { btn.classList.add('showing'); btn.textContent = '👁 Show'; }
+  }
+})();
+
+// ── Roth Conversion Planner ─────────────────────────────────────────────────
+function toggleRothPlanner() {
+  const body = el('roth-body'), icon = el('roth-chevron');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  if (icon) icon.textContent = open ? '▶' : '▼';
+}
+
+function setRothBracket(b) {
+  [10, 12, 22].forEach(v => {
+    const btn = el('roth-btn-' + v);
+    if (btn) btn.classList.toggle('roth-active', v === b);
+  });
+  const hid = el('roth-bracket');
+  if (hid) hid.value = b;
+  renderRothPlanner();
+}
+
+function calcFedTaxMFJ(taxableIncome, inflFactor) {
+  if (taxableIncome <= 0) return 0;
+  const b = [0, 23200, 94300, 201050, 383900, 487450, 578125].map(x => x * inflFactor);
+  const r = [0.10, 0.12, 0.22, 0.24, 0.32, 0.35, 0.37];
+  let tax = 0;
+  for (let i = 0; i < r.length; i++) {
+    const lo = b[i], hi = (i + 1 < b.length) ? b[i + 1] : Infinity;
+    if (taxableIncome <= lo) break;
+    tax += (Math.min(taxableIncome, hi) - lo) * r[i];
+  }
+  return tax;
+}
+
+function bracketCeiling(bracket, inflFactor) {
+  return {10: 23200, 12: 94300, 22: 201050, 24: 383900}[bracket] * inflFactor;
+}
+
+function renderRothPlanner() {
+  const tbody = el('roth-table-body');
+  if (!tbody) return;
+
+  const fromYear   = +(el('roth-from-year')?.value || 2035);
+  const toYear     = +(el('roth-to-year')?.value   || 2040);
+  const otherInc   = +(el('roth-other-inc')?.value || 0);
+  const bracket    = +(el('roth-bracket')?.value   || 12);
+  const rothRate   = +(el('ret-rate')?.value        || 7) / 100;
+  const expenses   = +(el('ret-expenses')?.value    || 80000);
+  const birthStr   = el('ret-birthdate-self')?.value || '1971-12-02';
+  const birthYear  = +birthStr.split('-')[0];
+  const birthMonth = +birthStr.split('-')[1] - 1; // 0-indexed
+
+  // Auto-compute trad/roth balances from live data projected to conversion start
+  const nowYear      = new Date().getFullYear();
+  const yearsToFrom  = Math.max(0, fromYear - nowYear);
+  const growFactor   = Math.pow(1 + rothRate, yearsToFrom);
+  const buckets      = getLiveBuckets();
+  const iraStart   = Math.round(buckets.pretaxIra  * growFactor);
+  const k401Start  = Math.round(buckets.pretax401k * growFactor);
+  const hsaStart   = Math.round(buckets.hsa        * growFactor);
+  const rothBal0   = Math.round(buckets.roth        * growFactor);
+
+  // Update display fields
+  const fmtD2 = n => '$' + Math.round(n).toLocaleString();
+  const dTrad = el('roth-trad-bal-display'), sTrad = el('roth-trad-bal-src');
+  const dRoth = el('roth-roth-bal-display'), sRoth = el('roth-roth-bal-src');
+  if (dTrad) dTrad.textContent = fmtD2(iraStart + k401Start);
+  if (sTrad) sTrad.textContent = `IRA ${fmtD2(iraStart)} + 401K ${fmtD2(k401Start)} → ${fromYear}`;
+  if (dRoth) dRoth.textContent = fmtD2(rothBal0);
+  if (sRoth) sRoth.textContent = `(${fmtD2(buckets.roth)} today → ${fromYear})`;
+
+  // Update linked display fields
+  const rd = el('roth-rate-display'), ed = el('roth-exp-display');
+  if (rd) rd.textContent = (+el('ret-rate')?.value || 7) + '%';
+  if (ed) ed.textContent = '$' + Math.round(expenses).toLocaleString() + '/yr';
+
+  let iraBal     = iraStart;
+  let k401Bal    = k401Start;
+  let hsaBal     = hsaStart;
+  let rothBal    = rothBal0;
+  let taxableBal = 0;
+  let totalConv  = 0;
+  let totalTax   = 0;
+  const rows     = [];
+
+  for (let year = fromYear; year <= Math.min(toYear, fromYear + 20); year++) {
+    const inflFactor = Math.pow(1.03, year - 2025);
+    const stdDeduct  = 29200 * inflFactor;
+    const age        = year - birthYear - (birthMonth > 6 ? 1 : 0);
+
+    // Income before conversion: trad draw for expenses + other income
+    const tradForExp    = Math.max(0, expenses - otherInc);
+    const baseIncome    = tradForExp + otherInc;
+    const baseTaxable   = Math.max(0, baseIncome - stdDeduct);
+    const ceiling       = bracketCeiling(bracket, inflFactor);
+    const room          = Math.max(0, ceiling - baseTaxable);
+    // Draw from IRA first, then 401K. HSA is untouched.
+    const totalPretax    = iraBal + k401Bal;
+    const availForConv   = Math.max(0, totalPretax - tradForExp);
+    const conversion     = Math.min(room, availForConv);
+
+    const convTaxable    = baseTaxable + conversion;
+    const taxWithConv    = calcFedTaxMFJ(convTaxable, inflFactor);
+    const taxWithoutConv = calcFedTaxMFJ(baseTaxable, inflFactor);
+    const taxCost        = taxWithConv - taxWithoutConv;
+    const effRate        = conversion > 0 ? taxCost / conversion : 0;
+
+    let totalDraw = tradForExp + conversion;
+    const iraDrawn  = Math.min(totalDraw, iraBal);  iraBal  -= iraDrawn;  totalDraw -= iraDrawn;
+    const k401Drawn = Math.min(totalDraw, k401Bal); k401Bal -= k401Drawn;
+    iraBal   = Math.max(0, iraBal  * (1 + rothRate));
+    k401Bal  = Math.max(0, k401Bal * (1 + rothRate));
+    hsaBal   = hsaBal * (1 + rothRate);
+    rothBal  = (rothBal + conversion) * (1 + rothRate);
+
+    const excess   = Math.max(0, otherInc - expenses);
+    taxableBal     = (taxableBal + excess) * (1 + rothRate);
+
+    totalConv += conversion;
+    totalTax  += taxCost;
+
+    rows.push({year, age, stdDeduct, otherInc, tradForExp, room, conversion,
+               taxCost, effRate, iraBal, k401Bal, hsaBal, rothBal, excess, taxableBal});
+  }
+
+  // Project Roth forward to age 75 from end of window
+  const lastYear    = Math.min(toYear, fromYear + 20);
+  const lastAge     = lastYear - birthYear - (birthMonth > 6 ? 1 : 0);
+  const yearsTo75   = Math.max(0, 75 - lastAge);
+  const rothAt75    = rothBal * Math.pow(1 + rothRate, yearsTo75);
+  const avgRate     = totalConv > 0 ? totalTax / totalConv : 0;
+
+  const fmtK = n => {
+    const v = Math.round(Math.abs(n));
+    if (v >= 1000000) return '$' + (Math.abs(n)/1000000).toFixed(2) + 'M';
+    if (v >= 1000)    return '$' + Math.round(Math.abs(n)/1000) + 'K';
+    return '$' + v;
+  };
+  const fmtD  = n => '$' + Math.round(n).toLocaleString();
+  const fmtPct = n => (n * 100).toFixed(1) + '%';
+
+  // Summary stats
+  const ss = (id, val, sub) => {
+    const v = el(id + '-val'), s = el(id + '-sub');
+    if (v) v.textContent = val;
+    if (s && sub != null) s.textContent = sub;
+  };
+  ss('roth-total-conv', fmtD(totalConv));
+  ss('roth-total-tax',  fmtD(totalTax));
+  ss('roth-avg-rate',   fmtPct(avgRate));
+  ss('roth-at-rmd',     fmtK(rothAt75), 'projected at age 75');
+
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.year}</td>
+      <td>${r.age}</td>
+      <td style="color:var(--muted)">${fmtK(r.stdDeduct)}</td>
+      <td>${fmtK(r.otherInc)}</td>
+      <td>${fmtK(r.tradForExp)}</td>
+      <td style="color:var(--blue)">${fmtK(r.room)}</td>
+      <td style="color:var(--green);font-weight:700">${fmtK(r.conversion)}</td>
+      <td style="color:var(--orange)">${fmtK(r.taxCost)}</td>
+      <td style="color:var(--muted)">${fmtPct(r.effRate)}</td>
+      <td style="${r.iraBal  <= 0 ? 'color:var(--red)' : ''}">${r.iraBal  <= 0 ? '—' : fmtK(r.iraBal)}</td>
+      <td style="${r.k401Bal <= 0 ? 'color:var(--muted)' : ''}">${r.k401Bal <= 0 ? '—' : fmtK(r.k401Bal)}</td>
+      <td style="color:var(--teal,#2bbbad)">${fmtK(r.hsaBal)}</td>
+      <td style="color:var(--green)">${fmtK(r.rothBal)}</td>
+      <td style="color:${r.excess > 0 ? 'var(--purple)' : 'var(--muted)'}">${fmtK(r.excess)}</td>
+      <td style="color:var(--purple)">${fmtK(r.taxableBal)}</td>
+    </tr>`).join('');
+}
+
+// Countdown to retirement date — reads from the date picker.
+function renderCountdown() {
+  const _rYear  = parseInt(el('ret-retire-date')?.value)  || 2034;
+  const _rMonth = parseInt(el('ret-retire-month')?.value) || 12;
+  const _rDay   = parseInt(el('ret-retire-day')?.value)   || 1;
+  const target  = new Date(_rYear, _rMonth - 1, _rDay);
+  const days = Math.ceil((target - new Date()) / 86400000);
+  const node = el('ret-countdown');
+  if (node) node.textContent = days > 0 ? days.toLocaleString() : '0';
+  const sub = el('ret-countdown-sub');
+  if (sub) {
+    const fmt = target.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    sub.textContent = 'days to ' + fmt;
+  }
+}
+
+function renderRetire() {
+  renderCountdown();
+  renderRothPlanner();
+  // Sync: slider→num only when num isn't focused (avoids clobbering mid-typing)
+  ['ret-age','ret-retage','ret-expenses','ret-contrib','ret-rate'].forEach(id => {
+    const slider = el(id), num = el(id+'-val');
+    if(slider && num && document.activeElement !== num) {
+      if(num.value !== slider.value) num.value = slider.value;
+    }
+  });
+
+  const curAge   = +el('ret-age').value;
+  // Derive retAge from retirement date + birthdate
+  (function() {
+    const _retYear2  = parseInt(el('ret-retire-date')?.value);
+    const birthStr2  = el('ret-birthdate-self')?.value;
+    if (_retYear2 && birthStr2) {
+      const age = _retYear2 - new Date(birthStr2).getFullYear();
+      el('ret-retage').value     = Math.max(curAge + 1, age);
+      el('ret-retage-val').value = Math.max(curAge + 1, age);
+      const disp = el('ret-retage-display');
+      if (disp) disp.textContent = 'age ' + Math.max(curAge + 1, age);
+    }
+  })();
+  const retAge   = +el('ret-retage').value;
+  const years    = retAge - curAge;
+  const contrib  = +(el('ret-contrib-val')?.value  ?? el('ret-contrib').value)  || 0;
+  const rate     = +(el('ret-rate-val')?.value     ?? el('ret-rate').value)     || 0;
+  const expenses = +(el('ret-expenses-val')?.value ?? el('ret-expenses').value) || 0;
+
+  const _parseAmt = id => Math.max(0, parseFloat((el(id)?.value||'').replace(/[^0-9.]/g,''))||0);
+  const startBal = _parseAmt('bal-ira')+_parseAmt('bal-401k')+_parseAmt('bal-roth')+_parseAmt('bal-hsa')+_parseAmt('bal-taxable');
+  if(el('ret-start-bal')) el('ret-start-bal').textContent = fmt(startBal);
+  if(el('ret-start-source')) el('ret-start-source').textContent = '· from account inputs above';
+
+  const ssi          = getSsiInputs(curAge);
+  const annualSsiTot = ssi.reduce((s, x) => s + (x.amount || 0), 0);
+  const {monthlyExtra, stopYears} = getExtraContrib(curAge);
+  const WITHDRAW_YEARS = 30;
+
+  // Full lifecycle projection: accumulation + 30y of retirement (with SSI net out)
+  const proj = projectRetirement(startBal, contrib, rate, years,
+                                 WITHDRAW_YEARS, curAge, expenses, ssi,
+                                 monthlyExtra, stopYears);
+  const atRetirement = proj[years].balance;            // balance at retirement age
+  const atEnd        = proj[proj.length - 1].balance;  // balance after 30y withdrawal
+  const freedomNumber = expenses * 25;
+  const monthlyIncome = atRetirement * 0.04 / 12;
+
+  // Find when we cross the freedom number (accumulation portion only)
+  let freedomYears = null;
+  for(const p of proj.slice(0, years + 1)) {
+    if(p.balance >= freedomNumber) { freedomYears = p.year; break; }
+  }
+  if(freedomYears == null) {
+    const extended = projectRetirement(startBal, contrib, rate, 50, 0, 0, 0, [], monthlyExtra, stopYears);
+    for(const p of extended) {
+      if(p.balance >= freedomNumber) { freedomYears = p.year; break; }
+    }
+  }
+
+  el('ret-at-age').textContent     = fmtK(atRetirement);
+  el('ret-at-age-sub').textContent = `at age ${retAge} (${years} yrs of compounding)`;
+  el('ret-monthly-income').textContent = fmtK(monthlyIncome) + '/mo';
+  if(freedomYears != null) {
+    el('ret-freedom-years').textContent = freedomYears.toFixed(0);
+    el('ret-freedom-sub').textContent = `at age ${(curAge + freedomYears).toFixed(0)} · freedom # = ${fmtK(freedomNumber)}`;
+  } else {
+    el('ret-freedom-years').textContent = '50+';
+    el('ret-freedom-sub').textContent = `freedom # = ${fmtK(freedomNumber)} — try bumping contribution or expectations`;
+  }
+
+  // Chart — accumulation + 30y retirement, with retirement-age marker
+  destroyChart('retire');
+  const labels   = proj.map(p => 'Age ' + (curAge + p.year));
+  const balances = proj.map(p => p.balance);
+  const freedomLine = proj.map(_ => freedomNumber);
+  // Vertical-ish marker: a second dataset with null everywhere except retirement age
+  const retAgeMarker = proj.map((p, i) => i === years ? p.balance : null);
+
+  _charts.retire = new Chart(el('ret-chart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Projected balance', data: balances,
+          borderColor:'#3fb950', backgroundColor:'rgba(63,185,80,.1)',
+          fill:true, tension:.25, pointRadius:0, borderWidth:2 },
+        { label: `Freedom # (${fmtK(freedomNumber)})`, data: freedomLine,
+          borderColor:'#bc8cff', backgroundColor:'transparent',
+          borderDash:[6,4], fill:false, tension:0, pointRadius:0, borderWidth:1.5 },
+        { label: `Retire at ${retAge}`, data: retAgeMarker,
+          borderColor:'transparent', backgroundColor:'#f0883e',
+          pointRadius:6, pointHoverRadius:8, showLine:false },
+      ],
+    },
+    options: lineOpts('$'),
+  });
+
+  // Plain-English explainer
+  const totalContrib  = contrib * 12 * years;
+  const growthPortion = atRetirement - startBal - totalContrib;
+  let explain = `Starting from <strong>${fmt(startBal)}</strong> today and adding <strong>${fmt(contrib)}/mo</strong> for ${years} years at <strong>${rate}%</strong> average return: ` +
+    `you put in <strong>${fmt(totalContrib)}</strong> of new money, and compound growth adds <strong>${fmt(growthPortion)}</strong> on top — ` +
+    `landing at <strong>${fmtK(atRetirement)}</strong> at retirement age <strong>${retAge}</strong>. `;
+  if (ssi.length) {
+    const ssiSummary = ssi.map(s => `${fmtK(s.amount)}/yr at age ${s.startAge}`).join(' + ');
+    explain += `Social Security adds <strong>${ssiSummary}</strong> (${fmtK(annualSsiTot)}/yr total once both are flowing), reducing what you need to pull from the portfolio. `;
+  }
+  explain += `After ${WITHDRAW_YEARS} years of withdrawals at <strong>${fmt(expenses)}/yr</strong>, ` +
+    `the portfolio ${atEnd > 0 ? 'still has <strong style="color:var(--green)">' + fmtK(atEnd) + '</strong> left' : '<strong style="color:var(--red)">runs out</strong> — try lower expenses, more SSI, or a later retirement age'}. ` +
+    `The "freedom number" is the classic 4%-rule target: 25× your annual expenses. ` +
+    (freedomYears != null ? `You hit it in <strong>${freedomYears.toFixed(0)} years</strong>.` : '');
+  el('ret-explain').innerHTML = explain;
+
+  // Schedule a Monte Carlo run — debounced so dragging the sliders stays smooth
+  scheduleMonteCarlo({startBal, contrib, rate, vol: +el('ret-vol').value, expenses,
+                      accumYears: years, withdrawYears: WITHDRAW_YEARS, curAge, retAge, ssi,
+                      extraMonthly: monthlyExtra, extraStopYears: stopYears});
+
+  // Derive retirement year from retirement date for drawdown
+  const _retireYear = parseInt(el('ret-retire-date')?.value) || (new Date().getFullYear() + (retAge - curAge));
+  el('ret-retire-year').value = _retireYear;
+
+  // Year-by-year drawdown projection
+  renderDrawdown(atRetirement, _retireYear, curAge, expenses, ssi, rate);
+
+  // Persist the current input set so a refresh / re-login restores it
+  saveRetireInputs();
+}
+
+// Drawdown scenario: 'bear' | 'base' | 'bull' — offset applied to configured return.
+let _ddScenario = 'bear';
+const DD_SCENARIO_OFFSET = {bear: -3, base: 0, bull: 3};
+
+function setDdScenario(s) {
+  _ddScenario = s;
+  ['bear','base','bull'].forEach(k => {
+    const b = el('dd-btn-' + k);
+    if (b) b.classList.toggle('dd-active', k === s);
+  });
+  renderRetire();
+}
+
+// ddRetireYearChanged removed — replaced by retirement date picker
+
+// Year-by-year drawdown projection broken out by account type.
+// RMD applies only to IRA + 401K (pretax). Roth and HSA are exempt.
+// Draw order: IRA → 401K → Roth (Roth preserved longest, drawn only when pretax runs dry).
+// Medicare costs drawn from HSA first (tax-free). MAGI = pretax draws + 85% SS only.
+function renderDrawdown(startBal, retireYear, curAge, expenses, ssi, rate) {
+  const tbody  = el('drawdown-table-body');
+  const explEl = el('dd-explain');
+  if (!tbody) return;
+
+  const effectiveRate = Math.max(0.5, Math.min(20, rate + (DD_SCENARIO_OFFSET[_ddScenario] ?? 0)));
+
+  ['bear','base','bull'].forEach(s => {
+    const lbl = el('dd-rate-' + s);
+    const r = Math.max(0.5, Math.min(20, rate + DD_SCENARIO_OFFSET[s]));
+    if (lbl) lbl.textContent = `(${r.toFixed(1)}%)`;
+  });
+  const scenDescriptions = {
+    bear: `Conservative: ${effectiveRate.toFixed(1)}% return (−3% from your ${rate}% target)`,
+    base: `Expected: ${effectiveRate.toFixed(1)}% return (your configured rate)`,
+    bull: `Optimistic: ${effectiveRate.toFixed(1)}% return (+3% from your ${rate}% target)`,
+  };
+  const scenLbl = el('dd-scenario-label');
+  if (scenLbl) scenLbl.textContent = scenDescriptions[_ddScenario] ?? '';
+
+  const CURRENT_YEAR = new Date().getFullYear();
+  const retireAge    = curAge + (retireYear - CURRENT_YEAR);
+
+  // Per-account starting balances at retirement: use getLiveBuckets() proportions
+  // projected to retirement year, scaled to match startBal (Monte Carlo total).
+  const bkts = getLiveBuckets();
+  const yearsToRetire = Math.max(0, retireYear - CURRENT_YEAR);
+  const gf    = Math.pow(1 + effectiveRate / 100, yearsToRetire);
+  const rawIra  = bkts.pretaxIra  * gf;
+  const rawK401 = bkts.pretax401k * gf;
+  const rawRoth = bkts.roth       * gf;
+  const rawHsa  = bkts.hsa        * gf;
+  const rawTot  = rawIra + rawK401 + rawRoth + rawHsa;
+  const sf = rawTot > 0 ? startBal / rawTot : 1;
+  let iraBal  = rawIra  * sf;
+  let k401Bal = rawK401 * sf;
+  let rothBal = rawRoth * sf;
+  let hsaBal  = rawHsa  * sf;
+
+  // Medicare cost estimate (MFJ couple, Part B + Part D + Medigap)
+  // $9,500/yr in 2026, growing 5%/yr. Starts at Medicare eligibility age 65.
+  const MEDICARE_BASE_2026 = 9500;
+  const MEDICARE_INFLATION  = 0.05;
+
+  // IRS Uniform Lifetime Table (2022 update)
+  const RMD_TABLE = {
+    73:26.5,74:25.5,75:24.6,76:23.7,77:22.9,78:22.0,79:21.1,
+    80:20.2,81:19.4,82:18.5,83:17.7,84:16.8,85:16.0,86:15.2,
+    87:14.4,88:13.7,89:12.9,90:12.2,91:11.5,92:10.8,93:10.1,
+    94:9.5, 95:8.9, 96:8.4, 97:7.8, 98:7.3, 99:6.8,100:6.4
+  };
+
+  // 2026 IRMAA MFJ thresholds — monthly surcharge per person on Part B premium
+  const IRMAA_TIERS = [
+    {limit:212000,  label:'Standard', mo:0},
+    {limit:266000,  label:'Tier 1',   mo:74.00},
+    {limit:334000,  label:'Tier 2',   mo:186.90},
+    {limit:412000,  label:'Tier 3',   mo:299.80},
+    {limit:750000,  label:'Tier 4',   mo:412.70},
+    {limit:Infinity,label:'Tier 5',   mo:449.10},
+  ];
+  function getIrmaa(magi) {
+    for (const t of IRMAA_TIERS) if (magi <= t.limit) return t;
+    return IRMAA_TIERS[IRMAA_TIERS.length - 1];
+  }
+
+  const _birthYear = el('ret-birthdate-self')?.value
+    ? new Date(el('ret-birthdate-self').value).getFullYear() : 1960;
+  const _rmdThresh = _birthYear >= 1960 ? 75 : 73;
+
+  const ROWS = 35;
+  const rows = [];
+  let depletedYear = null, firstRmdYear = null, firstIrmaaYear = null;
+  let firstHsaDepletionYear = null, firstMedFromPortfolioYear = null;
+  let firstRothDrawYear = null;
+
+  for (let y = 0; y < ROWS; y++) {
+    const year    = retireYear + y;
+    const jeffAge = retireAge  + y;
+    const totBal  = iraBal + k401Bal + rothBal + hsaBal;
+
+    if (totBal <= 0) {
+      if (!depletedYear) depletedYear = year;
+      rows.push({year, age: jeffAge, depleted: true});
+      break;
+    }
+
+    // SS income this year
+    let ssAnnual = 0;
+    for (const s of ssi) {
+      const ssStartYear = CURRENT_YEAR + (s.startAge - s.currentAge);
+      if (year >= ssStartYear) ssAnnual += s.amount;
+    }
+
+    // Grow all accounts
+    const r = effectiveRate / 100;
+    const iraGain   = iraBal  * r;
+    const k401Gain  = k401Bal * r;
+    const rothGain  = rothBal * r;
+    const hsaGain   = hsaBal  * r;
+    const totalGain = iraGain + k401Gain + rothGain + hsaGain;
+
+    const iraAvail  = iraBal  + iraGain;
+    const k401Avail = k401Bal + k401Gain;
+    const rothAvail = rothBal + rothGain;
+    const hsaAfterGrowth = hsaBal + hsaGain;
+
+    // Medicare cost this year (zero before age 65)
+    const yearsFromNow = year - CURRENT_YEAR;
+    const medCost = jeffAge >= 65
+      ? MEDICARE_BASE_2026 * Math.pow(1 + MEDICARE_INFLATION, yearsFromNow)
+      : 0;
+
+    // Draw medical costs from HSA first (tax-free, no MAGI impact)
+    const hsaMedDraw = Math.min(medCost, hsaAfterGrowth);
+    const hsaAfterMed = hsaAfterGrowth - hsaMedDraw;
+    const medFromPortfolio = medCost - hsaMedDraw;
+    if (hsaMedDraw > 0 && hsaAfterMed < 1 && !firstHsaDepletionYear) firstHsaDepletionYear = year;
+    if (medFromPortfolio > 0 && !firstMedFromPortfolioYear) firstMedFromPortfolioYear = year;
+
+    // RMD on PRETAX ONLY (IRA + 401K), beginning-of-year balance per IRS rules
+    const pretaxBOY = iraBal + k401Bal;
+    const rmdAge    = Math.min(jeffAge, 100);
+    const rmdFactor = jeffAge >= _rmdThresh ? (RMD_TABLE[rmdAge] ?? RMD_TABLE[100]) : null;
+    const rmdReq    = rmdFactor ? pretaxBOY / rmdFactor : 0;
+    if (rmdFactor && !firstRmdYear) firstRmdYear = year;
+
+    // Net living expense need from portfolio (after SS); plus uncovered medical
+    const netNeed = Math.max(0, expenses + medFromPortfolio - ssAnnual);
+    // Must withdraw at least the RMD
+    let remaining  = Math.max(netNeed, rmdReq);
+    const rmdForced = rmdReq > 0 && rmdReq > netNeed;
+
+    // Draw order: IRA → 401K → Roth last
+    let iraDrawn = 0, k401Drawn = 0, rothDrawn = 0;
+    iraDrawn  = Math.min(remaining, iraAvail);   remaining -= iraDrawn;
+    if (remaining > 0) { k401Drawn = Math.min(remaining, k401Avail); remaining -= k401Drawn; }
+    if (remaining > 0) { rothDrawn = Math.min(remaining, rothAvail); }
+    if (rothDrawn > 0 && !firstRothDrawYear) firstRothDrawYear = year;
+
+    // MAGI: pretax draws + 85% SS. HSA and Roth draws are tax-free — excluded from MAGI.
+    const magi  = iraDrawn + k401Drawn + ssAnnual * 0.85;
+    const irmaa = getIrmaa(magi);
+    if (irmaa.mo > 0 && !firstIrmaaYear) firstIrmaaYear = year;
+
+    const iraEnd  = Math.max(0, iraAvail  - iraDrawn);
+    const k401End = Math.max(0, k401Avail - k401Drawn);
+    const rothEnd = Math.max(0, rothAvail - rothDrawn);
+    const hsaEnd  = Math.max(0, hsaAfterMed);
+
+    rows.push({
+      year, age: jeffAge,
+      iraBal, k401Bal, rothBal, hsaBal,
+      totalGain, ssAnnual, netNeed,
+      medCost, hsaMedDraw, medFromPortfolio,
+      rmdReq, rmdForced,
+      iraDrawn, k401Drawn, rothDrawn,
+      magi, irmaa,
+      iraEnd, k401End, rothEnd, hsaEnd,
+      totEnd: iraEnd + k401End + rothEnd + hsaEnd,
+      depleted: false,
+    });
+    iraBal = iraEnd; k401Bal = k401End; rothBal = rothEnd; hsaBal = hsaEnd;
+  }
+
+  // Render rows
+  tbody.innerHTML = rows.map(r => {
+    if (r.depleted) return `<tr class="dd-depleted"><td>${r.year}</td><td>${r.age}</td>`
+      + `<td colspan="15" style="text-align:left">💀 Portfolio depleted</td></tr>`;
+
+    const isRmd = r.age >= _rmdThresh;
+    const ssCell = r.ssAnnual > 0
+      ? `<span style="color:var(--green)">${fmtK(r.ssAnnual)}</span>` : '—';
+    const rmdCell = isRmd
+      ? `<span class="dd-rmd-flag">${fmtK(r.rmdReq)}</span>${r.rmdForced ? ' ⚠' : ''}` : '—';
+
+    // Medicare / medical cell
+    let medCell = '—';
+    if (r.medCost > 0) {
+      const uncovered = r.medFromPortfolio > 0
+        ? `<span style="color:var(--red);font-size:9px"> +${fmtK(r.medFromPortfolio)} uncover</span>` : '';
+      medCell = `${fmtK(r.medCost)}${uncovered}`;
+    }
+
+    // HSA medical draw cell
+    const hsaMedCell = r.hsaMedDraw > 0
+      ? `<span style="color:var(--green)">${fmtK(r.hsaMedDraw)}</span>` : '—';
+
+    // Pretax draw cell: show IRA+401K breakdown when both contribute
+    const pretaxDraw = r.iraDrawn + r.k401Drawn;
+    let pretaxCell;
+    if (pretaxDraw <= 0) {
+      pretaxCell = '—';
+    } else if (r.iraDrawn > 0 && r.k401Drawn > 0) {
+      pretaxCell = `${fmtK(r.iraDrawn)}<span style="color:var(--muted);font-size:9px"> IRA</span>`
+        + `+${fmtK(r.k401Drawn)}<span style="color:var(--muted);font-size:9px"> 401K</span>`;
+    } else if (r.k401Drawn > 0) {
+      pretaxCell = `${fmtK(r.k401Drawn)}<span style="color:var(--muted);font-size:9px"> 401K</span>`;
+    } else {
+      pretaxCell = fmtK(r.iraDrawn);
+    }
+    if (r.rmdForced) pretaxCell = `<span class="dd-rmd-flag">${pretaxCell}</span>`;
+
+    const rothDrawCell = r.rothDrawn > 0
+      ? `<span style="color:#7ec8e3">${fmtK(r.rothDrawn)}</span>` : '—';
+
+    const irmaaAmt  = r.irmaa.mo > 0
+      ? ` <span style="font-size:10px">(+$${(r.irmaa.mo*24).toFixed(0)}/yr×2)</span>` : '';
+    const irmaaCell = `<span${r.irmaa.mo > 0 ? ' class="dd-irmaa-hit"' : ''}>${r.irmaa.label}${irmaaAmt}</span>`;
+
+    const wIra  = r.iraBal  > 0 && r.iraBal  < 100000 ? ' class="dd-warn-bal"' : '';
+    const wK401 = r.k401Bal > 0 && r.k401Bal < 100000 ? ' class="dd-warn-bal"' : '';
+
+    return `<tr class="${isRmd ? 'dd-rmd-row' : ''}">
+      <td>${r.year}</td>
+      <td>${r.age}</td>
+      <td${wIra}>${r.iraBal > 0 ? fmtK(r.iraBal) : '—'}</td>
+      <td${wK401}>${r.k401Bal > 0 ? fmtK(r.k401Bal) : '—'}</td>
+      <td style="color:#7ec8e3">${r.rothBal > 0 ? fmtK(r.rothBal) : '—'}</td>
+      <td style="color:var(--green)">${r.hsaBal > 0 ? fmtK(r.hsaBal) : '—'}</td>
+      <td style="color:var(--green)">+${fmtK(r.totalGain)}</td>
+      <td>${ssCell}</td>
+      <td>${fmtK(r.netNeed)}</td>
+      <td>${medCell}</td>
+      <td>${rmdCell}</td>
+      <td>${pretaxCell}</td>
+      <td>${rothDrawCell}</td>
+      <td>${hsaMedCell}</td>
+      <td>${fmtK(r.magi)}</td>
+      <td>${irmaaCell}</td>
+      <td>${fmtK(r.totEnd)}</td>
+    </tr>`;
+  }).join('');
+
+  // Plain-English summary
+  if (explEl) {
+    const finalRow = rows[rows.length - 1];
+    const bktsLbl = rawTot > 0
+      ? ` (IRA ${fmtK(rawIra*sf)}, 401K ${fmtK(rawK401*sf)}, Roth ${fmtK(rawRoth*sf)}, HSA ${fmtK(rawHsa*sf)})`
+      : '';
+    let txt = `Retiring in <strong>${retireYear}</strong> (age ${retireAge}) with <strong>${fmtK(startBal)}</strong>${bktsLbl}. `;
+    if (depletedYear) {
+      const depAge = retireAge + (depletedYear - retireYear);
+      txt += `<strong style="color:var(--red)">Portfolio depletes in ${depletedYear} (age ${depAge})</strong> — consider delaying retirement, reducing expenses, or claiming SS earlier. `;
+    } else {
+      txt += `Balance after ${ROWS} years: <strong style="color:var(--green)">${fmtK(finalRow?.totEnd)}</strong>. `;
+    }
+    if (firstRmdYear) {
+      const rmdAge2 = retireAge + (firstRmdYear - retireYear);
+      txt += `RMDs begin in <strong>${firstRmdYear}</strong> (age ${rmdAge2}) on pretax accounts only — Roth and HSA are exempt. `;
+    }
+    if (firstHsaDepletionYear) {
+      const depAge = retireAge + (firstHsaDepletionYear - retireYear);
+      txt += `HSA depletes in <strong>${firstHsaDepletionYear}</strong> (age ${depAge}); after that Medicare costs fall into pretax draws and raise MAGI. `;
+    }
+    if (firstRothDrawYear) {
+      const rAge = retireAge + (firstRothDrawYear - retireYear);
+      txt += `Roth first drawn in <strong>${firstRothDrawYear}</strong> (age ${rAge}) — those draws remain IRMAA-invisible. `;
+    }
+    if (firstIrmaaYear) {
+      txt += `IRMAA surcharges first appear in <strong>${firstIrmaaYear}</strong> (MAGI = pretax draws + 85% SS; Roth and HSA excluded). `;
+    }
+    txt += `Medicare cost estimate: $${MEDICARE_BASE_2026.toLocaleString()}/yr in 2026 (+5%/yr), drawn from HSA tax-free while available. Uses ${effectiveRate.toFixed(1)}% flat return (${_ddScenario} scenario).`;
+    explEl.innerHTML = txt;
+  }
+}
+
+
+// ── Monte Carlo simulation ────────────────────────────────────────────────
+// Why this matters: a deterministic "7% / year forever" projection is fiction.
+// Real returns are bumpy, and a bad early year hurts way more than a bad late
+// year (sequence-of-returns risk). Monte Carlo runs many random paths and
+// shows the distribution of outcomes — and crucially, a SUCCESS RATE: out of
+// N paths, what fraction kept the portfolio alive through 30 years of
+// withdrawals at your annual expenses?
+const MC_PATHS = 1000;
+let _mcTimer = null;
+
+// Box-Muller transform: turns two uniform(0,1) samples into a standard-normal.
+function _gaussian() {
+  const u = 1 - Math.random();   // (0, 1] so log() is safe
+  const v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function runMonteCarlo(p) {
+  const monthlyMean = p.rate / 100 / 12;
+  const monthlyStd  = p.vol  / 100 / Math.sqrt(12);
+  const monthlyContrib  = p.contrib;
+  const monthlyExpenses = p.expenses / 12;
+  const totalYears = p.accumYears + p.withdrawYears;
+  const months     = totalYears * 12;
+
+  // For each path: balance at the end of each year (year 0..totalYears)
+  const paths = new Array(MC_PATHS);
+  let successes = 0;
+  for (let i = 0; i < MC_PATHS; i++) {
+    let bal = p.startBal;
+    const yrly = new Array(totalYears + 1);
+    yrly[0] = bal;
+    let alive = true;
+    for (let m = 1; m <= months; m++) {
+      const r = monthlyMean + monthlyStd * _gaussian();
+      bal *= (1 + r);
+      if (m <= p.accumYears * 12) {
+        const extra = (p.extraMonthly > 0 && m <= p.extraStopYears * 12) ? p.extraMonthly : 0;
+        bal += monthlyContrib + extra;
+      } else if (alive) {
+        // Net withdrawal = expenses − SSI flowing this month (each stream
+        // starts at its own start age, scaled to the simulation timeline)
+        let monthlySsi = 0;
+        if (p.ssi && p.ssi.length) {
+          const yearsFromNow = m / 12;
+          for (const s of p.ssi) {
+            const startYear = Math.max(0, s.startAge - s.currentAge);
+            if (yearsFromNow >= startYear) monthlySsi += (s.amount || 0) / 12;
+          }
+        }
+        const net = Math.max(0, monthlyExpenses - monthlySsi);
+        bal -= net;
+        if (bal < 0) { bal = 0; alive = false; }
+      }
+      if (m % 12 === 0) yrly[m / 12] = bal;
+    }
+    paths[i] = yrly;
+    if (alive) successes++;
+  }
+
+  // Compute percentile bands at each year boundary
+  const pct = {p10: [], p25: [], p50: [], p75: [], p90: []};
+  const idx = q => Math.max(0, Math.min(MC_PATHS - 1, Math.floor(MC_PATHS * q)));
+  for (let y = 0; y <= totalYears; y++) {
+    const col = paths.map(pth => pth[y]).sort((a, b) => a - b);
+    pct.p10.push(col[idx(0.10)]);
+    pct.p25.push(col[idx(0.25)]);
+    pct.p50.push(col[idx(0.50)]);
+    pct.p75.push(col[idx(0.75)]);
+    pct.p90.push(col[idx(0.90)]);
+  }
+  // Balances at retirement (end of accumulation)
+  const atRet = paths.map(pth => pth[p.accumYears]).sort((a, b) => a - b);
+  return {
+    successRate: successes / MC_PATHS,
+    pct,
+    atRetP10: atRet[idx(0.10)],
+    atRetP50: atRet[idx(0.50)],
+    atRetP90: atRet[idx(0.90)],
+  };
+}
+
+function scheduleMonteCarlo(params) {
+  if (_mcTimer) clearTimeout(_mcTimer);
+  _mcTimer = setTimeout(() => renderMonteCarlo(params), 180);
+}
+
+function renderMonteCarlo(p) {
+  const t0  = performance.now();
+  const sim = runMonteCarlo(p);
+  const ms  = Math.round(performance.now() - t0);
+
+  // Headline stats
+  el('mc-success').textContent = (sim.successRate * 100).toFixed(0) + '%';
+  el('mc-success').style.color = sim.successRate >= 0.9 ? 'var(--green)'
+    : sim.successRate >= 0.7 ? 'var(--yellow)' : 'var(--red)';
+  el('mc-success-sub').textContent = `${Math.round(sim.successRate * MC_PATHS)} of ${MC_PATHS} paths survive 30 yrs of withdrawals`;
+  el('mc-p10').textContent = fmtK(sim.atRetP10);
+  el('mc-p90').textContent = fmtK(sim.atRetP90);
+  el('mc-meta').textContent = `${MC_PATHS} paths · vol ${p.vol}% · ${ms}ms`;
+
+  // Fan chart — overlapping percentile bands
+  destroyChart('mc');
+  const labels = [];
+  for (let y = 0; y <= p.accumYears + p.withdrawYears; y++) labels.push('Age ' + (p.curAge + y));
+  // Mark the retirement age with a vertical-ish hint via dataset label
+  _charts.mc = new Chart(el('mc-chart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        // Outer band p10 → p90 (light)
+        { label: '10th %ile',  data: sim.pct.p10, borderColor:'transparent', pointRadius:0, fill:false, order:5 },
+        { label: '90th %ile',  data: sim.pct.p90, borderColor:'transparent', pointRadius:0,
+          backgroundColor: 'rgba(63,185,80,0.08)', fill: '-1', order:4 },
+        // Inner band p25 → p75 (medium)
+        { label: '25th %ile',  data: sim.pct.p25, borderColor:'transparent', pointRadius:0, fill:false, order:3 },
+        { label: '75th %ile',  data: sim.pct.p75, borderColor:'transparent', pointRadius:0,
+          backgroundColor: 'rgba(63,185,80,0.16)', fill: '-1', order:2 },
+        // Median line
+        { label: 'Median',     data: sim.pct.p50, borderColor:'#3fb950', borderWidth:2,
+          pointRadius:0, fill:false, tension:.2, order:1 },
+      ],
+    },
+    options: lineOpts('$'),
+  });
+
+  // Explainer
+  const succ = sim.successRate;
+  let verdict, vColor;
+  if (succ >= 0.95)      { verdict = 'rock-solid';           vColor = 'var(--green)'; }
+  else if (succ >= 0.85) { verdict = 'comfortable';          vColor = 'var(--green)'; }
+  else if (succ >= 0.70) { verdict = 'workable, with risk';  vColor = 'var(--yellow)'; }
+  else if (succ >= 0.50) { verdict = 'precarious';           vColor = 'var(--orange)'; }
+  else                   { verdict = 'unlikely to last';     vColor = 'var(--red)'; }
+
+  const ssiTotal = (p.ssi || []).reduce((s, x) => s + (x.amount || 0), 0);
+  const ssiNote  = ssiTotal > 0
+    ? ` Social Security contributes <strong>${fmtK(ssiTotal)}/yr</strong> once flowing, so each path only pulls the gap from the portfolio.`
+    : '';
+
+  el('mc-explain').innerHTML =
+    `Ran <strong>${MC_PATHS}</strong> random paths with monthly returns drawn from a normal distribution ` +
+    `(mean <strong>${p.rate}%</strong>/yr, volatility <strong>${p.vol}%</strong>). ` +
+    `In <strong style="color:${vColor}">${(succ*100).toFixed(0)}%</strong> of paths your portfolio survives <strong>${p.withdrawYears} years of retirement</strong> ` +
+    `at <strong>${fmt(p.expenses)}/yr</strong> in expenses — that's <strong style="color:${vColor}">${verdict}</strong>.` + ssiNote + ' ' +
+    `At retirement, the unlucky 10th-percentile path ends with <strong>${fmtK(sim.atRetP10)}</strong>, ` +
+    `the median with <strong>${fmtK(sim.atRetP50)}</strong>, ` +
+    `the lucky 90th with <strong>${fmtK(sim.atRetP90)}</strong>. ` +
+    `<em>The fan chart shows the spread — wider = more uncertainty, narrower = more predictable.</em>`;
+}
+
+
+function _updateBalTotal() {
+  const _p = id => Math.max(0, parseFloat((el(id)?.value||'').replace(/[^0-9.]/g,''))||0);
+  const tot = _p('bal-ira')+_p('bal-401k')+_p('bal-roth')+_p('bal-hsa')+_p('bal-taxable');
+  const te = el('bal-total');
+  if(te) te.textContent = fmt(tot);
+  if(typeof saveRetireInputs==='function') saveRetireInputs();
+}
+(function init() {
+  const hasSaved = !!localStorage.getItem(RETIRE_LS_KEY);
+  restoreRetireInputs();
+  _updateBalTotal();
+  syncAgeFromBirth();
+  syncRetireAge();
+  toggleSsi();
+  toggleExtraContrib();
+  updateSsiCalc();
+  if (hasSaved) renderRetire();
+})();
+
+</script>
+</body>
+</html>
